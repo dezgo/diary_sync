@@ -1,0 +1,22 @@
+# Obsidian vault path (update if vault moves)
+vault_path: "C:\\Users\\YourUser\\path\\to\\ObsidianVault"
+diary_subdir: "Diary"
+
+# YouTube channel ID — resolved from your channel
+# To find manually: go to youtube.com/@yourchannel > View Page Source > search "channelId"
+channel_id: "UC..."
+
+# How many days back to check for unprocessed videos (handles catch-up after PC off)
+lookback_days: 30
+
+# Transcript language preference
+transcript_lang: "en"
+
+# Also try to match placeholder [Video](https://a) links to real uploads
+backfill_placeholders: true
+
+# Timezone for converting YouTube UTC timestamps to local dates
+timezone: "Australia/Sydney"
+
+# Log level: DEBUG, INFO, WARNING, ERROR
+log_level: "INFO"

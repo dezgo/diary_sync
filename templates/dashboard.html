@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diary Sync Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            padding: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 { font-size: 1.6rem; margin-bottom: 24px; color: #fff; }
+        h2 { font-size: 1.1rem; margin-bottom: 12px; color: #ccc; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .card-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-value { font-size: 2rem; font-weight: 600; margin-top: 4px; }
+        .card-value.green { color: #4ade80; }
+        .card-value.yellow { color: #facc15; }
+        .card-value.red { color: #f87171; }
+        .card-value.blue { color: #60a5fa; }
+        .card-sub { font-size: 0.75rem; color: #666; margin-top: 4px; }
+
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .section-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            color: #888;
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #1f1f1f;
+        }
+        tr:hover td { background: #222; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-warn { background: #422006; color: #facc15; }
+        .badge-ok { background: #052e16; color: #4ade80; }
+        .badge-info { background: #0c1929; color: #60a5fa; }
+        .badge-red { background: #2a0a0a; color: #f87171; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+
+        .sync-output {
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.72rem;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            margin-top: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .sync-output.visible { display: block; }
+
+        .empty { color: #555; font-style: italic; padding: 12px; }
+        .yt-link { color: #f87171; text-decoration: none; }
+        .yt-link:hover { text-decoration: underline; }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+        .status-dot.stale { background: #facc15; }
+
+        .collapsible { cursor: pointer; user-select: none; }
+        .collapsible-content { display: none; }
+        .collapsible-content.open { display: block; }
+        .toggle-icon { font-size: 0.7rem; color: #666; margin-left: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Diary Sync Dashboard</h1>
+
+    <div class="status-bar">
+        <div class="status-dot {% if not last_sync_time %}stale{% endif %}"></div>
+        <span>
+            {% if last_sync_time %}
+                Last sync: {{ last_sync_time }}
+                {% if last_sync_summary %}&mdash; {{ last_sync_summary }}{% endif %}
+            {% else %}
+                No sync has run yet
+            {% endif %}
+        </span>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary btn-sm" id="syncBtn" onclick="triggerSync()">Sync Now</button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-label">Diary Notes</div>
+            <div class="card-value blue">{{ total_notes }}</div>
+            <div class="card-sub">Total in vault</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Videos Synced</div>
+            <div class="card-value green">{{ total_processed }}</div>
+            <div class="card-sub">Link + transcript added</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Issues</div>
+            <div class="card-value {% if total_issues > 0 %}yellow{% else %}green{% endif %}">{{ total_issues }}</div>
+            <div class="card-sub">Items needing attention</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Pending Transcripts</div>
+            <div class="card-value {% if pending_transcripts %}yellow{% else %}green{% endif %}">{{ pending_transcripts|length }}</div>
+            <div class="card-sub">Awaiting YouTube captions</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Wrong Location</div>
+            <div class="card-value {% if wrong_location %}red{% else %}green{% endif %}">{{ wrong_location_count }}</div>
+            <div class="card-sub">Not in Diary/YYYY/</div>
+        </div>
+    </div>
+
+    <div id="syncOutputSection" class="section" style="display:none">
+        <div class="section-header">
+            <h2>Sync Output</h2>
+            <span class="badge badge-info" id="syncStatusBadge">Running...</span>
+        </div>
+        <div class="sync-output visible" id="syncOutput"></div>
+    </div>
+
+    {% if wrong_location %}
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('wrongLocation')">
+            <h2>Notes in Wrong Location <span class="toggle-icon" id="wrongLocation-icon">&#9654;</span></h2>
+            <span class="badge badge-red">{{ wrong_location_count }} notes</span>
+        </div>
+        <p class="section-desc">
+            These diary notes were found outside their expected Diary/YYYY/ folder. They may need to be moved once iCloud sync is complete.
+        </p>
+        <div class="collapsible-content" id="wrongLocation">
+            <table>
+                <thead><tr><th>Date</th><th>Filename</th><th>Current Location</th><th>Expected</th></tr></thead>
+                <tbody>
+                    {% for item in wrong_location %}
+                    <tr>
+                        <td>{{ item.date }}</td>
+                        <td>{{ item.filename }}</td>
+                        <td style="color:#f87171">{{ item.current }}</td>
+                        <td style="color:#4ade80">{{ item.expected }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if unparsed_notes %}
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('unparsedNotes')">
+            <h2>Unrecognized Diary Notes <span class="toggle-icon" id="unparsedNotes-icon">&#9654;</span></h2>
+            <span class="badge badge-red">{{ unparsed_notes|length }}</span>
+        </div>
+        <p class="section-desc">
+            Files starting with "Dear Diary" but the date couldn't be parsed. These may have typos or unusual formatting in the filename.
+        </p>
+        <div class="collapsible-content" id="unparsedNotes">
+            <table>
+                <thead><tr><th>Filename</th><th>Location</th></tr></thead>
+                <tbody>
+                    {% for item in unparsed_notes %}
+                    <tr>
+                        <td style="color:#f87171">{{ item.filename }}</td>
+                        <td style="color:#666">{{ item.path }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if missing_entries %}
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('missingEntries')">
+            <h2>Missing Diary Entries <span class="toggle-icon" id="missingEntries-icon">&#9654;</span></h2>
+            <span class="badge badge-red">{{ missing_entry_count }} days</span>
+        </div>
+        <p class="section-desc">
+            Days since July 2016 with no diary note found in the vault. These may not have been migrated from Evernote yet.
+        </p>
+        <div class="collapsible-content" id="missingEntries">
+            <table>
+                <thead><tr><th>Date</th><th>Day</th></tr></thead>
+                <tbody>
+                    {% for item in missing_entries %}
+                    <tr>
+                        <td>{{ item.date }}</td>
+                        <td style="color:#666">{{ item.date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if missing_uploads %}
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('missingUploads')">
+            <h2>No YouTube Video for These Days <span class="toggle-icon" id="missingUploads-icon">&#9654;</span></h2>
+            <span class="badge badge-warn">{{ missing_upload_count }} days</span>
+        </div>
+        <p class="section-desc">
+            Diary notes exist but no YouTube upload was found for these dates. You may have recorded a video but forgotten to upload it.
+        </p>
+        <div class="collapsible-content" id="missingUploads">
+            <table>
+                <thead><tr><th>Date</th><th>Note</th></tr></thead>
+                <tbody>
+                    {% for item in missing_uploads %}
+                    <tr>
+                        <td>{{ item.date }}</td>
+                        <td>{{ item.filename }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if video_no_note %}
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('videoNoNote')">
+            <h2>YouTube Video But No Diary Note <span class="toggle-icon" id="videoNoNote-icon">&#9654;</span></h2>
+            <span class="badge badge-warn">{{ video_no_note|length }}</span>
+        </div>
+        <p class="section-desc">
+            Videos were uploaded on these dates but no matching diary note was found. You may need to create the note.
+        </p>
+        <div class="collapsible-content" id="videoNoNote">
+            <table>
+                <thead><tr><th>Date</th><th>Video</th></tr></thead>
+                <tbody>
+                    {% for item in video_no_note %}
+                    <tr>
+                        <td>{{ item.date }}</td>
+                        <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if pending_transcripts %}
+    <div class="section">
+        <div class="section-header">
+            <h2>Pending Transcripts</h2>
+            <span class="badge badge-warn">{{ pending_transcripts|length }}</span>
+        </div>
+        <p class="section-desc">
+            Videos found but YouTube captions aren't ready yet. Will retry on next sync.
+        </p>
+        <table>
+            <thead><tr><th>Date</th><th>Note</th><th>Video</th></tr></thead>
+            <tbody>
+                {% for item in pending_transcripts %}
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.note }}</td>
+                    <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if notes_no_video %}
+    <div class="section">
+        <div class="section-header">
+            <h2>Recent Notes Without Video Link</h2>
+            <span class="badge badge-info">{{ notes_no_video|length }}</span>
+        </div>
+        <p class="section-desc">
+            Notes from the last 30 days that don't have a [Video] link yet. These will be updated on the next sync if a matching upload exists.
+        </p>
+        <table>
+            <thead><tr><th>Date</th><th>Note</th></tr></thead>
+            <tbody>
+                {% for item in notes_no_video %}
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.filename }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-header collapsible" onclick="toggle('recentSynced')">
+            <h2>Recently Synced <span class="toggle-icon" id="recentSynced-icon">&#9654;</span></h2>
+            <span class="badge badge-ok">{{ recent_synced|length }}</span>
+        </div>
+        <div class="collapsible-content" id="recentSynced">
+            {% if recent_synced %}
+            <table>
+                <thead><tr><th>Date</th><th>Note</th><th>Video</th></tr></thead>
+                <tbody>
+                    {% for item in recent_synced %}
+                    <tr>
+                        <td>{{ item.date }}</td>
+                        <td>{{ item.note }}</td>
+                        <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">No videos synced yet</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggle(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            el.classList.toggle('open');
+            icon.textContent = el.classList.contains('open') ? '\u25BC' : '\u25B6';
+        }
+
+        let pollInterval = null;
+
+        async function triggerSync() {
+            const btn = document.getElementById('syncBtn');
+            const section = document.getElementById('syncOutputSection');
+            const output = document.getElementById('syncOutput');
+            const badge = document.getElementById('syncStatusBadge');
+
+            btn.disabled = true;
+            btn.textContent = 'Syncing...';
+            section.style.display = 'block';
+            output.textContent = '';
+            badge.textContent = 'Running...';
+            badge.className = 'badge badge-info';
+
+            const resp = await fetch('/api/sync', { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.status === 'already_running') {
+                badge.textContent = 'Already running';
+                return;
+            }
+
+            pollInterval = setInterval(pollSync, 1000);
+        }
+
+        async function pollSync() {
+            const output = document.getElementById('syncOutput');
+            const badge = document.getElementById('syncStatusBadge');
+            const btn = document.getElementById('syncBtn');
+
+            const resp = await fetch('/api/sync/status');
+            const data = await resp.json();
+
+            output.textContent = data.output.join('\n');
+            output.scrollTop = output.scrollHeight;
+
+            if (data.status === 'finished') {
+                clearInterval(pollInterval);
+                badge.textContent = data.exit_code === 0 ? 'Complete' : 'Error';
+                badge.className = data.exit_code === 0 ? 'badge badge-ok' : 'badge badge-warn';
+                btn.disabled = false;
+                btn.textContent = 'Sync Now';
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+    </script>
+</body>
+</html>

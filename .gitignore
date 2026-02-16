@@ -1,0 +1,21 @@
+# OAuth credentials and tokens
+credentials.json
+token.json
+
+# Runtime state
+state.json
+
+# Logs
+sync.log
+sync.log.*
+
+# Backups of modified notes
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Config (contains local paths)
+config.yaml

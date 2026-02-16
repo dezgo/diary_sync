@@ -3,6 +3,7 @@
 transcripts into Obsidian diary notes."""
 
 import os
+import re
 import sys
 import json
 import time
@@ -23,6 +24,28 @@ _MONTH_NAMES = [
     "", "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
 ]
+
+_TITLE_MONTHS = {
+    "january": 1, "february": 2, "march": 3, "april": 4,
+    "may": 5, "june": 6, "july": 7, "august": 8,
+    "september": 9, "october": 10, "november": 11, "december": 12,
+}
+_TITLE_DATE_RE = re.compile(r"(\d{1,2})\s+(\w+)\s+(\d{4})")
+
+
+def parse_date_from_title(title: str) -> date | None:
+    """Extract a date from a YouTube video title like '27 August 2025'."""
+    m = _TITLE_DATE_RE.search(title)
+    if not m:
+        return None
+    month = _TITLE_MONTHS.get(m.group(2).lower())
+    if not month:
+        return None
+    try:
+        return date(int(m.group(3)), month, int(m.group(1)))
+    except ValueError:
+        return None
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.yaml")
@@ -100,7 +123,13 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
     log.info(f"Found {len(videos)} uploads since {fetch_since}")
 
     # Collect all upload dates for missing upload check
-    upload_dates = {v["published_date"] for v in videos}
+    # Include both publish dates and title dates (they can differ for late-night uploads)
+    upload_dates = set()
+    for v in videos:
+        upload_dates.add(v["published_date"])
+        td = parse_date_from_title(v["title"])
+        if td:
+            upload_dates.add(td)
 
     # Only process videos within the normal lookback window for sync
     sync_videos_list = [v for v in videos if v["published_date"] >= since]
@@ -125,10 +154,20 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
             stats["skipped"] += 1
             continue
 
-        # Find matching diary note
+        # Find matching diary note by publish date, then fall back to title date
+        # (late-night uploads can cross midnight, making the publish date +1 day)
         note_path = find_diary_note(
             config["vault_path"], config.get("diary_subdir", "Diary"), vdate
         )
+        if not note_path:
+            title_date = parse_date_from_title(video["title"])
+            if title_date and title_date != vdate:
+                log.info(f"  Publish date {vdate} missed, trying title date {title_date}")
+                note_path = find_diary_note(
+                    config["vault_path"], config.get("diary_subdir", "Diary"), title_date
+                )
+                if note_path:
+                    vdate = title_date
         if not note_path:
             log.warning(f"  No diary note found for {vdate}")
             stats["no_note"] += 1

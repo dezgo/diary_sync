@@ -87,7 +87,7 @@ def get_dashboard_data():
     video_start = date(2025, 7, 1)
     missing_uploads = []
     for filepath, note_date in all_notes:
-        if note_date < video_start or note_date > date.today():
+        if note_date < video_start or note_date >= date.today():
             continue
         if str(note_date) not in upload_dates:
             # Check if note itself has a video link
@@ -97,11 +97,8 @@ def get_dashboard_data():
                     continue  # Has a video link already, probably processed before state tracking
             except Exception:
                 pass
-            missing_uploads.append({
-                "date": str(note_date),
-                "filename": os.path.basename(filepath),
-            })
-    missing_uploads.sort(key=lambda x: x["date"], reverse=True)
+            missing_uploads.append(str(note_date))
+    missing_uploads.sort(reverse=True)
 
     # Processed videos summary
     status_counts = defaultdict(int)

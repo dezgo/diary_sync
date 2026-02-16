@@ -288,12 +288,11 @@
         </p>
         <div class="collapsible-content" id="missingUploads">
             <table>
-                <thead><tr><th>Date</th><th>Note</th></tr></thead>
+                <thead><tr><th>Date</th></tr></thead>
                 <tbody>
-                    {% for item in missing_uploads %}
+                    {% for d in missing_uploads %}
                     <tr>
-                        <td>{{ item.date }}</td>
-                        <td>{{ item.filename }}</td>
+                        <td>{{ d }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

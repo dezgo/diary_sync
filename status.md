@@ -5,7 +5,9 @@
 Automates adding YouTube video links and auto-generated transcripts to Obsidian diary notes. Also creates daily diary notes, audits tags, and detects issues (missing entries, misplaced files, missing uploads).
 
 **Runs:** Daily at 6am via Windows Task Scheduler (`DiaryYouTubeSync`)
-**Dashboard:** http://localhost:5050
+**Backfill:** Every 6 hours via Task Scheduler (`DiaryBackfillTranscripts`) — 10 videos per batch
+**Dashboard:** http://localhost:5050 / https://diary.derekgillett.com (Cloudflare Tunnel + Zero Trust)
+**Repo:** github.com/dezgo/diary_sync
 **Log:** `sync.log` (rotating, 1MB max, 5 backups)
 
 ## Architecture
@@ -17,8 +19,12 @@ sync.py (main entry point)
   ├── diary_finder.py      → Find diary notes by date (vault-wide search)
   └── note_updater.py      → Analyze + modify note files (add video link + transcript)
 
+backfill.py (gradual transcript backfill, 10 per batch)
+
 dashboard.py (Flask web UI, port 5050)
   └── templates/dashboard.html
+
+start_services.bat (starts dashboard + Cloudflare Tunnel on login)
 ```
 
 ## Sync Flow
@@ -58,6 +64,8 @@ dashboard.py (Flask web UI, port 5050)
 | `token.json` | Cached OAuth2 refresh token (Brand Account) |
 | `state.json` | Tracks which videos have been processed |
 | `sync.log` | Audit log of all sync activity |
+| `backfill.py` | Gradual transcript backfill (10 videos/batch, 5s delays) |
+| `start_services.bat` | Starts dashboard + Cloudflare Tunnel on login |
 | `backups/` | `.bak` copies of notes before modification |
 
 ## Filename Parser
@@ -82,9 +90,9 @@ Diary notes are being migrated from Evernote into the Obsidian vault via iCloud.
 
 ### Older Notes Not Yet Backfilled
 
-**Status:** Ready to do
+**Status:** In progress (automated)
 
-The sync only processed the last 30 days on first run (18 notes updated). Videos from July 2025 through mid-January 2026 have not had transcripts added yet. Need to bump `lookback_days` temporarily and run a sync to backfill.
+Backfill task (`DiaryBackfillTranscripts`) runs every 6 hours, processing 10 videos per batch with 5-second delays to avoid YouTube rate limiting. Initial bulk attempt triggered an IP ban; gradual approach avoids this. Progress tracked in `state.json`.
 
 ### Some Videos Map to Wrong Date
 
@@ -111,7 +119,7 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 
 ## Current Status
 
-**Phase:** Operational. Daily sync running. Dashboard live. Evernote migration in progress.
+**Phase:** Operational. Daily sync running. Backfill in progress. Dashboard live locally and via Cloudflare Tunnel. Evernote migration in progress.
 
 ### What Works
 
@@ -130,18 +138,20 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 - [x] Flexible filename parser (commas, apostrophes, abbreviations, typos)
 - [x] Windows Task Scheduler (daily 6am, catch-up on missed runs)
 - [x] Rotating audit log
+- [x] Cloudflare Tunnel for remote access (diary.derekgillett.com)
+- [x] Cloudflare Zero Trust with email OTP authentication
+- [x] Gradual backfill (10 videos/batch, every 6 hours)
+- [x] GitHub repo (dezgo/diary_sync)
 
 ### What Doesn't Work Yet
-
-- [ ] **Backfill older videos** — Need to increase lookback to cover July 2025 onward
 - [ ] **Move misplaced notes** — Waiting for iCloud sync to complete
 - [ ] **Fix unrecognized filenames** — Manual rename needed for mangled filenames
 
 ## TODOs
 
 ### Priority 1: Backfill
-- [ ] Temporarily set `lookback_days: 300` and run sync to backfill all videos since July 2025
-- [ ] Reset `lookback_days: 30` after backfill
+- [x] Backfill task running automatically (10 videos every 6 hours)
+- [ ] Monitor progress — delete `DiaryBackfillTranscripts` scheduled task once all videos are done
 
 ### Priority 2: Post-iCloud Sync Cleanup
 - [ ] Move all misplaced notes to `Diary/YYYY/` folders

@@ -211,12 +211,14 @@ def get_dashboard_data():
             break
 
     # "Dear Diary" files we couldn't parse a date from
+    ignored = set(state.get("ignored_unparsed", []))
     unparsed = [
         {
             "filename": os.path.basename(fp),
             "path": os.path.relpath(fp, vault_path),
         }
         for fp in unparsed_notes
+        if os.path.basename(fp) not in ignored
     ]
 
     # Count issues
@@ -249,6 +251,7 @@ def get_dashboard_data():
         "cooldown": cooldown_until,
         "config": {
             "vault_path": config.get("vault_path", ""),
+            "vault_name": os.path.basename(config.get("vault_path", "")),
             "lookback_days": config.get("lookback_days", 30),
         },
     }
@@ -309,6 +312,25 @@ def sync_status():
         "exit_code": _sync_process.returncode,
         "output": list(_sync_output),
     })
+
+
+@app.route("/api/ignore-unparsed", methods=["POST"])
+def ignore_unparsed():
+    """Add a filename to the ignored unparsed list."""
+    body = request.get_json(silent=True) or {}
+    filename = body.get("filename", "").strip()
+    if not filename:
+        return jsonify({"error": "filename required"}), 400
+
+    state = load_state()
+    ignored = state.get("ignored_unparsed", [])
+    if filename not in ignored:
+        ignored.append(filename)
+        state["ignored_unparsed"] = ignored
+        with open(STATE_PATH, "w") as f:
+            json.dump(state, f, indent=2)
+
+    return jsonify({"status": "ok", "ignored": ignored})
 
 
 @app.route("/log")

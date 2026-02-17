@@ -297,12 +297,13 @@
         </p>
         <div class="collapsible-content" id="unparsedNotes">
             <table>
-                <thead><tr><th>Filename</th><th>Location</th></tr></thead>
+                <thead><tr><th>Filename</th><th>Location</th><th></th></tr></thead>
                 <tbody>
                     {% for item in unparsed_notes %}
-                    <tr>
-                        <td style="color:#f87171">{{ item.filename }}</td>
+                    <tr id="unparsed-{{ loop.index }}">
+                        <td><a class="yt-link" href="obsidian://open?vault={{ config.vault_name | urlencode }}&file={{ item.path | replace('.md', '') | urlencode }}" target="_blank" style="color:#f87171">{{ item.filename }}</a></td>
                         <td style="color:#666">{{ item.path }}</td>
+                        <td><button class="btn-sync-one" onclick="ignoreUnparsed('{{ item.filename }}', 'unparsed-{{ loop.index }}')">Ignore</button></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -465,6 +466,18 @@
             const icon = document.getElementById(id + '-icon');
             el.classList.toggle('open');
             icon.textContent = el.classList.contains('open') ? '\u25BC' : '\u25B6';
+        }
+
+        async function ignoreUnparsed(filename, rowId) {
+            const resp = await fetch('/api/ignore-unparsed', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename}),
+            });
+            if (resp.ok) {
+                const row = document.getElementById(rowId);
+                if (row) row.style.display = 'none';
+            }
         }
 
         let pollInterval = null;

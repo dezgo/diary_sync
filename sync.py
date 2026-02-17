@@ -72,6 +72,14 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
+    # Preserve ip_block if it was written to disk during this run
+    try:
+        with open(STATE_PATH, "r") as f:
+            on_disk = json.load(f)
+        if "ip_block" in on_disk:
+            state["ip_block"] = on_disk["ip_block"]
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
     with open(STATE_PATH, "w") as f:
         json.dump(state, f, indent=2, default=str)
 

@@ -3,8 +3,8 @@
 import json
 import os
 import re
-import time
 import logging
+import urllib.request
 from datetime import datetime, timedelta
 
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -27,41 +27,76 @@ def _is_ip_block(error: Exception) -> bool:
     return "blocked" in msg or "blocking requests from your ip" in msg
 
 
+def _get_external_ip() -> str | None:
+    """Get our current external IP address."""
+    try:
+        with urllib.request.urlopen("https://api.ipify.org", timeout=5) as resp:
+            return resp.read().decode().strip()
+    except Exception:
+        return None
+
+
 def is_in_cooldown() -> bool:
-    """Check if we're still in a cooldown period after a previous IP block."""
+    """Check if we're in cooldown for our current IP.
+
+    Only blocks transcript fetches if the current external IP matches
+    the one that was blocked. Different IP (e.g. VPN) is fine.
+    """
     try:
         with open(_STATE_PATH, "r") as f:
             state = json.load(f)
-        blocked_until = state.get("blocked_until")
-        if blocked_until:
-            until = datetime.fromisoformat(blocked_until)
-            if datetime.now() < until:
-                remaining = until - datetime.now()
-                hours = remaining.total_seconds() / 3600
-                log.warning(
-                    f"Transcript cooldown active — blocked until {blocked_until} "
-                    f"({hours:.1f}h remaining). Skipping all transcript fetches."
-                )
-                return True
-            # Cooldown has expired, clear it
+        blocked = state.get("ip_block")
+        if not blocked:
+            return False
+
+        until = datetime.fromisoformat(blocked["until"])
+        if datetime.now() >= until:
+            # Cooldown expired
             clear_cooldown()
+            return False
+
+        # Check if we're on a different IP now
+        current_ip = _get_external_ip()
+        blocked_ip = blocked.get("ip")
+        if current_ip and blocked_ip and current_ip != blocked_ip:
+            log.info(
+                f"Current IP ({current_ip}) differs from blocked IP "
+                f"({blocked_ip}) — transcript fetches OK"
+            )
+            return False
+
+        remaining = until - datetime.now()
+        hours = remaining.total_seconds() / 3600
+        log.warning(
+            f"IP {blocked_ip} blocked by YouTube — cooldown until "
+            f"{blocked['until'][:16]} ({hours:.1f}h remaining)"
+        )
+        return True
+
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
-        pass
-    return False
+        return False
 
 
 def _set_cooldown():
-    """Record an IP block cooldown in state.json."""
+    """Record an IP block cooldown in state.json, tagged with the blocked IP."""
     until = datetime.now() + timedelta(hours=BLOCK_COOLDOWN_HOURS)
+    current_ip = _get_external_ip()
     try:
         with open(_STATE_PATH, "r") as f:
             state = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         state = {"processed_videos": {}}
-    state["blocked_until"] = until.isoformat()
+    state["ip_block"] = {
+        "ip": current_ip,
+        "until": until.isoformat(),
+        "since": datetime.now().isoformat(),
+    }
     with open(_STATE_PATH, "w") as f:
         json.dump(state, f, indent=2, default=str)
-    log.warning(f"IP block cooldown set until {until.isoformat()} ({BLOCK_COOLDOWN_HOURS}h)")
+    log.warning(
+        f"IP {current_ip} blocked — cooldown set for {BLOCK_COOLDOWN_HOURS}h "
+        f"(until {until.isoformat()[:16]})"
+    )
 
 
 def clear_cooldown():
@@ -69,64 +104,58 @@ def clear_cooldown():
     try:
         with open(_STATE_PATH, "r") as f:
             state = json.load(f)
+        changed = False
+        # Clean up old format
         if "blocked_until" in state:
             del state["blocked_until"]
+            changed = True
+        if "ip_block" in state:
+            del state["ip_block"]
+            changed = True
+        if changed:
             with open(_STATE_PATH, "w") as f:
                 json.dump(state, f, indent=2, default=str)
-            log.info("IP block cooldown expired, resuming transcript fetches")
+            log.info("IP block cooldown cleared")
     except (FileNotFoundError, json.JSONDecodeError):
         pass
 
 
-def fetch_transcript(video_id: str, lang: str = "en",
-                     max_retries: int = 2) -> list | None | str:
+def fetch_transcript(video_id: str, lang: str = "en") -> list | None | str:
     """Fetch auto-generated transcript segments for a video.
 
     Returns a list of FetchedTranscriptSnippet objects (with .text, .start,
     .duration attributes), None if captions aren't available yet, or the
     string "BLOCKED" if YouTube is blocking requests from this IP.
     """
-    for attempt in range(max_retries + 1):
-        try:
-            transcript_list = _api.list(video_id)
+    try:
+        transcript_list = _api.list(video_id)
 
-            # Prefer auto-generated in the requested language
+        # Prefer auto-generated in the requested language
+        try:
+            transcript = transcript_list.find_generated_transcript([lang])
+        except Exception:
             try:
-                transcript = transcript_list.find_generated_transcript([lang])
+                transcript = transcript_list.find_generated_transcript(["en"])
             except Exception:
                 try:
-                    transcript = transcript_list.find_generated_transcript(["en"])
-                except Exception:
-                    try:
-                        transcript = transcript_list.find_manually_created_transcript(
-                            [lang, "en"]
-                        )
-                    except Exception:
-                        log.warning(f"No transcript found for {video_id}")
-                        return None
-
-            fetched = transcript.fetch()
-            log.info(f"Fetched {len(fetched)} transcript segments for {video_id}")
-            return list(fetched)
-
-        except Exception as e:
-            if _is_ip_block(e):
-                if attempt < max_retries:
-                    wait = (2 ** attempt) * 30  # 30s, 60s
-                    log.warning(
-                        f"IP blocked fetching {video_id}, "
-                        f"backing off {wait}s (attempt {attempt + 1}/{max_retries + 1})"
+                    transcript = transcript_list.find_manually_created_transcript(
+                        [lang, "en"]
                     )
-                    time.sleep(wait)
-                else:
-                    log.error(f"IP still blocked after {max_retries + 1} attempts for {video_id}")
-                    _set_cooldown()
-                    return "BLOCKED"
-            else:
-                log.warning(f"Could not fetch transcript for {video_id}: {e}")
-                return None
+                except Exception:
+                    log.warning(f"No transcript found for {video_id}")
+                    return None
 
-    return None
+        fetched = transcript.fetch()
+        log.info(f"Fetched {len(fetched)} transcript segments for {video_id}")
+        return list(fetched)
+
+    except Exception as e:
+        if _is_ip_block(e):
+            log.error(f"IP blocked fetching {video_id}")
+            _set_cooldown()
+            return "BLOCKED"
+        log.warning(f"Could not fetch transcript for {video_id}: {e}")
+        return None
 
 
 def format_transcript(segments: list, pause_threshold: float = 3.0) -> str:

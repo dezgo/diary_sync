@@ -5,7 +5,6 @@ Designed to run every 6 hours via Task Scheduler. Processes up to
 BATCH_SIZE videos per run with delays between each fetch.
 """
 
-import argparse
 import os
 import sys
 import json
@@ -19,7 +18,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from youtube_client import get_authenticated_service, get_recent_uploads
-from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown, clear_cooldown
+from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown
 from diary_finder import find_diary_note
 from note_updater import analyze_note, update_note
 from sync import parse_date_from_title
@@ -71,11 +70,6 @@ def save_state(state):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Backfill transcripts")
-    parser.add_argument("--force", action="store_true",
-                        help="Ignore IP block cooldown and fetch transcripts anyway")
-    args = parser.parse_args()
-
     setup_logging()
     config = load_config()
     state = load_state()
@@ -83,10 +77,7 @@ def main():
 
     log.info(f"=== Backfill starting (batch of {BATCH_SIZE}) ===")
 
-    if args.force:
-        log.info("--force: clearing IP block cooldown")
-        clear_cooldown()
-    elif is_in_cooldown():
+    if is_in_cooldown():
         log.info("=== Backfill skipped (IP cooldown) ===")
         return
 

@@ -174,18 +174,21 @@ def get_dashboard_data():
     # IP block cooldown status
     cooldown_until = None
     try:
-        if os.path.exists(STATE_PATH):
-            blocked_until = state.get("blocked_until")
-            if blocked_until:
-                from datetime import datetime
-                until = datetime.fromisoformat(blocked_until)
-                if datetime.now() < until:
-                    remaining = until - datetime.now()
-                    hours = remaining.total_seconds() / 3600
-                    cooldown_until = {
-                        "until": blocked_until,
-                        "hours_remaining": round(hours, 1),
-                    }
+        ip_block = state.get("ip_block")
+        # Also handle old format
+        if not ip_block and state.get("blocked_until"):
+            ip_block = {"until": state["blocked_until"], "ip": None}
+        if ip_block:
+            from datetime import datetime
+            until = datetime.fromisoformat(ip_block["until"])
+            if datetime.now() < until:
+                remaining = until - datetime.now()
+                hours = remaining.total_seconds() / 3600
+                cooldown_until = {
+                    "until": ip_block["until"],
+                    "hours_remaining": round(hours, 1),
+                    "ip": ip_block.get("ip"),
+                }
     except (ValueError, TypeError):
         pass
 
@@ -262,8 +265,6 @@ def trigger_sync():
         _sync_output.clear()
         body = request.get_json(silent=True) or {}
         cmd = [sys.executable, os.path.join(SCRIPT_DIR, "sync.py")]
-        if body.get("force"):
-            cmd.append("--force")
         if body.get("date"):
             cmd.extend(["--date", body["date"]])
 

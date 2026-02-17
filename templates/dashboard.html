@@ -176,19 +176,6 @@
             color: #facc15;
         }
 
-        .force-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-        }
-        .force-row label {
-            font-size: 0.75rem;
-            color: #888;
-            cursor: pointer;
-            user-select: none;
-        }
-
         .collapsible { cursor: pointer; user-select: none; }
         .collapsible-content { display: none; }
         .collapsible-content.open { display: block; }
@@ -200,11 +187,7 @@
 
     {% if cooldown %}
     <div class="cooldown-banner">
-        <span>IP blocked by YouTube &mdash; transcript fetches paused for {{ cooldown.hours_remaining }}h (until {{ cooldown.until[:16] }})</span>
-        <div class="force-row">
-            <input type="checkbox" id="forceCheck">
-            <label for="forceCheck">Override cooldown (e.g. VPN active)</label>
-        </div>
+        <span>IP {{ cooldown.ip or 'unknown' }} blocked by YouTube &mdash; transcript fetches paused for {{ cooldown.hours_remaining }}h. Switch to VPN for a different IP.</span>
     </div>
     {% endif %}
 
@@ -253,7 +236,7 @@
             <div class="card-label">YouTube IP</div>
             {% if cooldown %}
             <div class="card-value red">Blocked</div>
-            <div class="card-sub">{{ cooldown.hours_remaining }}h remaining</div>
+            <div class="card-sub">{{ cooldown.ip or '?' }} &mdash; {{ cooldown.hours_remaining }}h left</div>
             {% else %}
             <div class="card-value green">OK</div>
             <div class="card-sub">Transcripts enabled</div>
@@ -490,8 +473,6 @@
             output.textContent = '';
             badge.className = 'badge badge-info';
 
-            const forceEl = document.getElementById('forceCheck');
-            const force = forceEl ? forceEl.checked : false;
             const dateEl = document.getElementById('syncDate');
             const syncDate = dateEl ? dateEl.value : '';
 
@@ -504,7 +485,7 @@
             }
 
             section.scrollIntoView({behavior: 'smooth', block: 'start'});
-            const payload = {force};
+            const payload = {};
             if (syncDate) payload.date = syncDate;
             const resp = await fetch('/api/sync', {
                 method: 'POST',

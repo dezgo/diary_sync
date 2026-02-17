@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from youtube_client import get_authenticated_service, get_recent_uploads
-from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown, clear_cooldown
+from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown
 from diary_finder import find_diary_note, find_all_diary_notes, parse_date_from_filename, is_diary_filename
 from note_updater import analyze_note, update_note, fix_tag_if_needed
 
@@ -375,8 +375,6 @@ tags:
 
 def main():
     parser = argparse.ArgumentParser(description="Diary YouTube Sync")
-    parser.add_argument("--force", action="store_true",
-                        help="Ignore IP block cooldown and fetch transcripts anyway")
     parser.add_argument("--date", type=str, default=None,
                         help="Sync a single date only (YYYY-MM-DD)")
     args = parser.parse_args()
@@ -396,10 +394,6 @@ def main():
         log.info(f"=== Diary YouTube Sync starting (single date: {target_date}) ===")
     else:
         log.info("=== Diary YouTube Sync starting ===")
-
-    if args.force:
-        log.info("--force: clearing IP block cooldown")
-        clear_cooldown()
 
     # Validate vault path
     vault_path = config.get("vault_path", "")

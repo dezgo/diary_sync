@@ -141,6 +141,32 @@
         }
         .status-dot.stale { background: #facc15; }
 
+        .cooldown-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #2a1a0a;
+            border: 1px solid #7c4a10;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #facc15;
+        }
+
+        .force-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .force-row label {
+            font-size: 0.75rem;
+            color: #888;
+            cursor: pointer;
+            user-select: none;
+        }
+
         .collapsible { cursor: pointer; user-select: none; }
         .collapsible-content { display: none; }
         .collapsible-content.open { display: block; }
@@ -149,6 +175,16 @@
 </head>
 <body>
     <h1>Diary Sync Dashboard</h1>
+
+    {% if cooldown %}
+    <div class="cooldown-banner">
+        <span>IP blocked by YouTube &mdash; transcript fetches paused for {{ cooldown.hours_remaining }}h (until {{ cooldown.until[:16] }})</span>
+        <div class="force-row">
+            <input type="checkbox" id="forceCheck">
+            <label for="forceCheck">Override cooldown (e.g. VPN active)</label>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="status-bar">
         <div class="status-dot {% if not last_sync_time %}stale{% endif %}"></div>
@@ -421,7 +457,13 @@
             badge.textContent = 'Running...';
             badge.className = 'badge badge-info';
 
-            const resp = await fetch('/api/sync', { method: 'POST' });
+            const forceEl = document.getElementById('forceCheck');
+            const force = forceEl ? forceEl.checked : false;
+            const resp = await fetch('/api/sync', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({force}),
+            });
             const data = await resp.json();
 
             if (data.status === 'already_running') {

@@ -14,6 +14,7 @@ import yaml
 
 from diary_finder import find_all_diary_notes, find_all_diary_notes_everywhere, get_expected_path, parse_date_from_filename
 from note_updater import analyze_note
+from transcript_fetcher import is_in_cooldown as _check_cooldown
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.yaml")
@@ -170,6 +171,24 @@ def get_dashboard_data():
                 })
     video_no_note.sort(key=lambda x: x["date"], reverse=True)
 
+    # IP block cooldown status
+    cooldown_until = None
+    try:
+        if os.path.exists(STATE_PATH):
+            blocked_until = state.get("blocked_until")
+            if blocked_until:
+                from datetime import datetime
+                until = datetime.fromisoformat(blocked_until)
+                if datetime.now() < until:
+                    remaining = until - datetime.now()
+                    hours = remaining.total_seconds() / 3600
+                    cooldown_until = {
+                        "until": blocked_until,
+                        "hours_remaining": round(hours, 1),
+                    }
+    except (ValueError, TypeError):
+        pass
+
     # Last sync time from log
     log_lines = get_log_lines(200)
     last_sync_time = None
@@ -217,6 +236,7 @@ def get_dashboard_data():
         "recent_synced": recent_synced[:20],
         "last_sync_time": last_sync_time,
         "last_sync_summary": last_sync_summary,
+        "cooldown": cooldown_until,
         "config": {
             "vault_path": config.get("vault_path", ""),
             "lookback_days": config.get("lookback_days", 30),
@@ -240,8 +260,13 @@ def trigger_sync():
             return jsonify({"status": "already_running"})
 
         _sync_output.clear()
+        body = request.get_json(silent=True) or {}
+        cmd = [sys.executable, os.path.join(SCRIPT_DIR, "sync.py")]
+        if body.get("force"):
+            cmd.append("--force")
+
         _sync_process = subprocess.Popen(
-            [sys.executable, os.path.join(SCRIPT_DIR, "sync.py")],
+            cmd,
             cwd=SCRIPT_DIR,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

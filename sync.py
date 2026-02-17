@@ -2,11 +2,13 @@
 """Diary YouTube Sync — syncs YouTube video links and auto-generated
 transcripts into Obsidian diary notes."""
 
+import argparse
 import os
 import re
 import sys
 import json
 import time
+import random
 import logging
 from datetime import date, timedelta
 from logging.handlers import RotatingFileHandler
@@ -15,7 +17,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from youtube_client import get_authenticated_service, get_recent_uploads
-from transcript_fetcher import fetch_transcript, format_transcript
+from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown, clear_cooldown
 from diary_finder import find_diary_note, find_all_diary_notes, parse_date_from_filename, is_diary_filename
 from note_updater import analyze_note, update_note, fix_tag_if_needed
 
@@ -154,20 +156,24 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
             stats["skipped"] += 1
             continue
 
-        # Find matching diary note by publish date, then fall back to title date
-        # (late-night uploads can cross midnight, making the publish date +1 day)
-        note_path = find_diary_note(
-            config["vault_path"], config.get("diary_subdir", "Diary"), vdate
-        )
-        if not note_path:
-            title_date = parse_date_from_title(video["title"])
-            if title_date and title_date != vdate:
-                log.info(f"  Publish date {vdate} missed, trying title date {title_date}")
+        # Find matching diary note — prefer title date over publish date
+        # (late-night uploads cross midnight, making publish date +1 day)
+        title_date = parse_date_from_title(video["title"])
+        if title_date and title_date != vdate:
+            log.info(f"  Title date {title_date} differs from publish date {vdate}, trying title date first")
+            note_path = find_diary_note(
+                config["vault_path"], config.get("diary_subdir", "Diary"), title_date
+            )
+            if note_path:
+                vdate = title_date
+            else:
                 note_path = find_diary_note(
-                    config["vault_path"], config.get("diary_subdir", "Diary"), title_date
+                    config["vault_path"], config.get("diary_subdir", "Diary"), vdate
                 )
-                if note_path:
-                    vdate = title_date
+        else:
+            note_path = find_diary_note(
+                config["vault_path"], config.get("diary_subdir", "Diary"), vdate
+            )
         if not note_path:
             log.warning(f"  No diary note found for {vdate}")
             stats["no_note"] += 1
@@ -193,10 +199,20 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
             stats["skipped"] += 1
             continue
 
-        # Fetch transcript (with rate limit delay to avoid YouTube IP bans)
+        # Fetch transcript (with randomised delay to avoid YouTube IP bans)
+        if is_in_cooldown():
+            log.info("  Skipping transcript fetch (IP cooldown active)")
+            stats["no_transcript"] += 1
+            continue
+
         transcript_lang = config.get("transcript_lang", "en")
-        time.sleep(2)
+        time.sleep(5 + random.uniform(0, 5))
         segments = fetch_transcript(vid, transcript_lang)
+
+        if segments == "BLOCKED":
+            log.error("IP blocked by YouTube, skipping remaining transcript fetches")
+            stats["no_transcript"] += 1
+            break
 
         if segments is None:
             log.warning(f"  Transcript not available yet for {vid}")
@@ -347,10 +363,19 @@ tags:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Diary YouTube Sync")
+    parser.add_argument("--force", action="store_true",
+                        help="Ignore IP block cooldown and fetch transcripts anyway")
+    args = parser.parse_args()
+
     config = load_config()
     setup_logging(config)
 
     log.info("=== Diary YouTube Sync starting ===")
+
+    if args.force:
+        log.info("--force: clearing IP block cooldown")
+        clear_cooldown()
 
     # Validate vault path
     vault_path = config.get("vault_path", "")

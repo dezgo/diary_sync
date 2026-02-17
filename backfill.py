@@ -5,10 +5,12 @@ Designed to run every 6 hours via Task Scheduler. Processes up to
 BATCH_SIZE videos per run with delays between each fetch.
 """
 
+import argparse
 import os
 import sys
 import json
 import time
+import random
 import logging
 from datetime import date, timedelta
 from logging.handlers import RotatingFileHandler
@@ -17,9 +19,10 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from youtube_client import get_authenticated_service, get_recent_uploads
-from transcript_fetcher import fetch_transcript, format_transcript
+from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown, clear_cooldown
 from diary_finder import find_diary_note
 from note_updater import analyze_note, update_note
+from sync import parse_date_from_title
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.yaml")
@@ -28,8 +31,9 @@ CREDENTIALS_PATH = os.path.join(SCRIPT_DIR, "credentials.json")
 TOKEN_PATH = os.path.join(SCRIPT_DIR, "token.json")
 BACKUP_DIR = os.path.join(SCRIPT_DIR, "backups")
 
-BATCH_SIZE = 10
-DELAY_SECONDS = 5
+BATCH_SIZE = 5
+BASE_DELAY = 10   # seconds between transcript fetches
+DELAY_JITTER = 5  # randomised +/- seconds to avoid bot patterns
 
 log = logging.getLogger("diary_sync")
 
@@ -67,12 +71,24 @@ def save_state(state):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Backfill transcripts")
+    parser.add_argument("--force", action="store_true",
+                        help="Ignore IP block cooldown and fetch transcripts anyway")
+    args = parser.parse_args()
+
     setup_logging()
     config = load_config()
     state = load_state()
     processed = state["processed_videos"]
 
     log.info(f"=== Backfill starting (batch of {BATCH_SIZE}) ===")
+
+    if args.force:
+        log.info("--force: clearing IP block cooldown")
+        clear_cooldown()
+    elif is_in_cooldown():
+        log.info("=== Backfill skipped (IP cooldown) ===")
+        return
 
     # Authenticate
     youtube = get_authenticated_service(CREDENTIALS_PATH, TOKEN_PATH)
@@ -110,10 +126,22 @@ def main():
         vdate = video["published_date"]
         log.info(f"Backfill: {video['title']} ({vid}) from {vdate}")
 
-        # Find matching diary note
-        note_path = find_diary_note(
-            config["vault_path"], config.get("diary_subdir", "Diary"), vdate
-        )
+        # Find matching diary note — prefer title date over publish date
+        title_date = parse_date_from_title(video["title"])
+        if title_date and title_date != vdate:
+            note_path = find_diary_note(
+                config["vault_path"], config.get("diary_subdir", "Diary"), title_date
+            )
+            if note_path:
+                vdate = title_date
+            else:
+                note_path = find_diary_note(
+                    config["vault_path"], config.get("diary_subdir", "Diary"), vdate
+                )
+        else:
+            note_path = find_diary_note(
+                config["vault_path"], config.get("diary_subdir", "Diary"), vdate
+            )
         if not note_path:
             log.warning(f"  No diary note found for {vdate}")
             no_note += 1
@@ -142,12 +170,18 @@ def main():
             log.info(f"  Batch limit reached ({BATCH_SIZE} fetches), stopping")
             break
 
-        # Rate limit delay
-        time.sleep(DELAY_SECONDS)
+        # Rate limit delay with jitter to avoid bot detection
+        delay = BASE_DELAY + random.uniform(-DELAY_JITTER, DELAY_JITTER)
+        log.debug(f"  Rate limit delay: {delay:.1f}s")
+        time.sleep(delay)
         fetched += 1
 
-        # Fetch transcript
+        # Fetch transcript (returns "BLOCKED" if IP is banned)
         segments = fetch_transcript(vid, config.get("transcript_lang", "en"))
+        if segments == "BLOCKED":
+            log.error("IP blocked by YouTube, aborting remaining batch")
+            failed += 1
+            break
         if segments is None:
             log.warning(f"  Transcript not available for {vid}")
             failed += 1

@@ -185,9 +185,13 @@
 <body>
     <h1>Diary Sync Dashboard</h1>
 
-    {% if cooldown %}
+    {% if cooldown and not cooldown.on_different_ip %}
     <div class="cooldown-banner">
-        <span>IP {{ cooldown.ip or 'unknown' }} blocked by YouTube &mdash; transcript fetches paused for {{ cooldown.hours_remaining }}h. Switch to VPN for a different IP.</span>
+        <span>IP {{ cooldown.blocked_ip or 'unknown' }} blocked by YouTube &mdash; transcript fetches paused for {{ cooldown.hours_remaining }}h. Switch to VPN for a different IP.</span>
+    </div>
+    {% elif cooldown and cooldown.on_different_ip %}
+    <div class="cooldown-banner" style="background:#0a2a1a; border-color:#107c4a; color:#4ade80;">
+        <span>Now on {{ cooldown.current_ip }} ({{ cooldown.blocked_ip }} still blocked for {{ cooldown.hours_remaining }}h) &mdash; safe to sync</span>
     </div>
     {% endif %}
 
@@ -234,9 +238,12 @@
         </div>
         <div class="card">
             <div class="card-label">YouTube IP</div>
-            {% if cooldown %}
+            {% if cooldown and not cooldown.on_different_ip %}
             <div class="card-value red">Blocked</div>
-            <div class="card-sub">{{ cooldown.ip or '?' }} &mdash; {{ cooldown.hours_remaining }}h left</div>
+            <div class="card-sub">{{ cooldown.blocked_ip or '?' }} &mdash; {{ cooldown.hours_remaining }}h left</div>
+            {% elif cooldown and cooldown.on_different_ip %}
+            <div class="card-value green">OK (VPN)</div>
+            <div class="card-sub">{{ cooldown.current_ip }}</div>
             {% else %}
             <div class="card-value green">OK</div>
             <div class="card-sub">Transcripts enabled</div>

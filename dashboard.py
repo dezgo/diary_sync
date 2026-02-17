@@ -14,7 +14,7 @@ import yaml
 
 from diary_finder import find_all_diary_notes, find_all_diary_notes_everywhere, get_expected_path, parse_date_from_filename
 from note_updater import analyze_note
-from transcript_fetcher import is_in_cooldown as _check_cooldown
+from transcript_fetcher import _get_external_ip
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.yaml")
@@ -173,6 +173,7 @@ def get_dashboard_data():
 
     # IP block cooldown status
     cooldown_until = None
+    current_ip = _get_external_ip()
     try:
         ip_block = state.get("ip_block")
         # Also handle old format
@@ -184,10 +185,16 @@ def get_dashboard_data():
             if datetime.now() < until:
                 remaining = until - datetime.now()
                 hours = remaining.total_seconds() / 3600
+                blocked_ip = ip_block.get("ip")
+                on_different_ip = (
+                    current_ip and blocked_ip and current_ip != blocked_ip
+                )
                 cooldown_until = {
                     "until": ip_block["until"],
                     "hours_remaining": round(hours, 1),
-                    "ip": ip_block.get("ip"),
+                    "blocked_ip": blocked_ip,
+                    "current_ip": current_ip,
+                    "on_different_ip": on_different_ip,
                 }
     except (ValueError, TypeError):
         pass

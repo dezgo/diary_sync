@@ -96,9 +96,10 @@ def setup_logging(config: dict):
     root.addHandler(console_handler)
 
 
-def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
+def sync_videos(config: dict, state: dict, target_date: date | None = None) -> tuple[dict, set[date]]:
     """Main video sync: match YouTube uploads to diary notes.
 
+    If target_date is set, only process videos matching that date.
     Returns (stats dict, set of upload dates).
     """
     processed = state["processed_videos"]
@@ -133,9 +134,19 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
         if td:
             upload_dates.add(td)
 
-    # Only process videos within the normal lookback window for sync
-    sync_videos_list = [v for v in videos if v["published_date"] >= since]
-    log.info(f"Processing {len(sync_videos_list)} uploads within lookback window")
+    # Filter videos to process
+    if target_date:
+        # Single-date mode: match by title date or publish date
+        sync_videos_list = []
+        for v in videos:
+            td = parse_date_from_title(v["title"])
+            if td == target_date or v["published_date"] == target_date:
+                sync_videos_list.append(v)
+        log.info(f"Single-date mode: found {len(sync_videos_list)} video(s) for {target_date}")
+    else:
+        # Normal mode: process videos within the lookback window
+        sync_videos_list = [v for v in videos if v["published_date"] >= since]
+        log.info(f"Processing {len(sync_videos_list)} uploads within lookback window")
 
     stats = {
         "updated": 0,
@@ -150,8 +161,8 @@ def sync_videos(config: dict, state: dict) -> tuple[dict, set[date]]:
         vdate = video["published_date"]
         log.info(f"Processing: {video['title']} ({vid}) from {vdate}")
 
-        # Skip if already fully processed
-        if vid in processed and processed[vid].get("status") == "complete":
+        # Skip if already fully processed (unless single-date mode)
+        if not target_date and vid in processed and processed[vid].get("status") == "complete":
             log.debug("  Already processed, skipping")
             stats["skipped"] += 1
             continue
@@ -366,12 +377,25 @@ def main():
     parser = argparse.ArgumentParser(description="Diary YouTube Sync")
     parser.add_argument("--force", action="store_true",
                         help="Ignore IP block cooldown and fetch transcripts anyway")
+    parser.add_argument("--date", type=str, default=None,
+                        help="Sync a single date only (YYYY-MM-DD)")
     args = parser.parse_args()
 
     config = load_config()
     setup_logging(config)
 
-    log.info("=== Diary YouTube Sync starting ===")
+    target_date = None
+    if args.date:
+        try:
+            target_date = date.fromisoformat(args.date)
+        except ValueError:
+            log.error(f"Invalid date format: {args.date} (expected YYYY-MM-DD)")
+            sys.exit(1)
+
+    if target_date:
+        log.info(f"=== Diary YouTube Sync starting (single date: {target_date}) ===")
+    else:
+        log.info("=== Diary YouTube Sync starting ===")
 
     if args.force:
         log.info("--force: clearing IP block cooldown")
@@ -383,17 +407,18 @@ def main():
         log.error(f"Vault path not found: {vault_path}")
         sys.exit(2)
 
-    # Create today's note if it doesn't exist yet
-    try:
-        create_today_note(config)
-    except Exception as e:
-        log.error(f"Failed to create today's note: {e}", exc_info=True)
+    # Create today's note if it doesn't exist yet (skip in single-date mode)
+    if not target_date:
+        try:
+            create_today_note(config)
+        except Exception as e:
+            log.error(f"Failed to create today's note: {e}", exc_info=True)
 
     state = load_state()
     upload_dates = set()
 
     try:
-        stats, upload_dates = sync_videos(config, state)
+        stats, upload_dates = sync_videos(config, state, target_date)
         log.info(
             f"Video sync: {stats['updated']} updated, {stats['skipped']} skipped, "
             f"{stats['no_note']} no note, {stats['no_transcript']} no transcript, "
@@ -404,18 +429,18 @@ def main():
     finally:
         save_state(state)
 
-    # Tag audit pass
-    try:
-        audit_tags(config)
-    except Exception as e:
-        log.error(f"Tag audit failed: {e}", exc_info=True)
-
-    # Missing upload check
-    if upload_dates:
+    # Tag audit and missing upload check (skip in single-date mode)
+    if not target_date:
         try:
-            check_missing_uploads(config, upload_dates)
+            audit_tags(config)
         except Exception as e:
-            log.error(f"Missing upload check failed: {e}", exc_info=True)
+            log.error(f"Tag audit failed: {e}", exc_info=True)
+
+        if upload_dates:
+            try:
+                check_missing_uploads(config, upload_dates)
+            except Exception as e:
+                log.error(f"Missing upload check failed: {e}", exc_info=True)
 
     log.info("=== Diary YouTube Sync complete ===")
 

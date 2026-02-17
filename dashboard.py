@@ -264,6 +264,8 @@ def trigger_sync():
         cmd = [sys.executable, os.path.join(SCRIPT_DIR, "sync.py")]
         if body.get("force"):
             cmd.append("--force")
+        if body.get("date"):
+            cmd.extend(["--date", body["date"]])
 
         _sync_process = subprocess.Popen(
             cmd,

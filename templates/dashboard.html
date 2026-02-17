@@ -101,6 +101,28 @@
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn-primary { background: #3b82f6; color: #fff; }
         .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+        .btn-sync-one {
+            padding: 3px 10px;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            background: transparent;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-sync-one:hover { background: #1e3a5f; }
+
+        .date-input {
+            padding: 5px 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #111;
+            color: #e0e0e0;
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
 
         .sync-output {
             background: #111;
@@ -197,6 +219,7 @@
             {% endif %}
         </span>
         <div style="flex:1"></div>
+        <input type="date" id="syncDate" class="date-input" title="Leave empty for full sync, or pick a date for single-note sync">
         <button class="btn btn-primary btn-sm" id="syncBtn" onclick="triggerSync()">Sync Now</button>
     </div>
 
@@ -225,6 +248,16 @@
             <div class="card-label">Wrong Location</div>
             <div class="card-value {% if wrong_location %}red{% else %}green{% endif %}">{{ wrong_location_count }}</div>
             <div class="card-sub">Not in Diary/YYYY/</div>
+        </div>
+        <div class="card">
+            <div class="card-label">YouTube IP</div>
+            {% if cooldown %}
+            <div class="card-value red">Blocked</div>
+            <div class="card-sub">{{ cooldown.hours_remaining }}h remaining</div>
+            {% else %}
+            <div class="card-value green">OK</div>
+            <div class="card-sub">Transcripts enabled</div>
+            {% endif %}
         </div>
     </div>
 
@@ -372,13 +405,14 @@
             Videos found but YouTube captions aren't ready yet. Will retry on next sync.
         </p>
         <table>
-            <thead><tr><th>Date</th><th>Note</th><th>Video</th></tr></thead>
+            <thead><tr><th>Date</th><th>Note</th><th>Video</th><th></th></tr></thead>
             <tbody>
                 {% for item in pending_transcripts %}
                 <tr>
                     <td>{{ item.date }}</td>
                     <td>{{ item.note }}</td>
                     <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
+                    <td><button class="btn-sync-one" onclick="syncOne('{{ item.date }}', this)">Sync</button></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -396,12 +430,13 @@
             Notes from the last 30 days that don't have a [Video] link yet. These will be updated on the next sync if a matching upload exists.
         </p>
         <table>
-            <thead><tr><th>Date</th><th>Note</th></tr></thead>
+            <thead><tr><th>Date</th><th>Note</th><th></th></tr></thead>
             <tbody>
                 {% for item in notes_no_video %}
                 <tr>
                     <td>{{ item.date }}</td>
                     <td>{{ item.filename }}</td>
+                    <td><button class="btn-sync-one" onclick="syncOne('{{ item.date }}', this)">Sync</button></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -451,18 +486,30 @@
             const badge = document.getElementById('syncStatusBadge');
 
             btn.disabled = true;
-            btn.textContent = 'Syncing...';
             section.style.display = 'block';
             output.textContent = '';
-            badge.textContent = 'Running...';
             badge.className = 'badge badge-info';
 
             const forceEl = document.getElementById('forceCheck');
             const force = forceEl ? forceEl.checked : false;
+            const dateEl = document.getElementById('syncDate');
+            const syncDate = dateEl ? dateEl.value : '';
+
+            if (syncDate) {
+                btn.textContent = 'Syncing ' + syncDate + '...';
+                badge.textContent = 'Syncing ' + syncDate + '...';
+            } else {
+                btn.textContent = 'Syncing...';
+                badge.textContent = 'Running full sync...';
+            }
+
+            section.scrollIntoView({behavior: 'smooth', block: 'start'});
+            const payload = {force};
+            if (syncDate) payload.date = syncDate;
             const resp = await fetch('/api/sync', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({force}),
+                body: JSON.stringify(payload),
             });
             const data = await resp.json();
 
@@ -472,6 +519,19 @@
             }
 
             pollInterval = setInterval(pollSync, 1000);
+        }
+
+        function syncOne(dateStr, btnEl) {
+            const dateEl = document.getElementById('syncDate');
+            if (dateEl) dateEl.value = dateStr;
+            // Disable all sync-one buttons while running
+            document.querySelectorAll('.btn-sync-one').forEach(b => b.disabled = true);
+            if (btnEl) {
+                btnEl.textContent = 'Syncing...';
+                btnEl.style.color = '#facc15';
+                btnEl.style.borderColor = '#facc15';
+            }
+            triggerSync();
         }
 
         async function pollSync() {
@@ -487,11 +547,26 @@
 
             if (data.status === 'finished') {
                 clearInterval(pollInterval);
-                badge.textContent = data.exit_code === 0 ? 'Complete' : 'Error';
-                badge.className = data.exit_code === 0 ? 'badge badge-ok' : 'badge badge-warn';
+                const ok = data.exit_code === 0;
+                // Check output for results summary
+                const lastLines = data.output.slice(-5).join(' ');
+                let resultText = ok ? 'Complete' : 'Error';
+                const match = lastLines.match(/(\d+) updated/);
+                if (match && ok) {
+                    resultText = match[1] === '0' ? 'No changes' : match[1] + ' updated';
+                }
+                badge.textContent = resultText;
+                badge.className = ok ? 'badge badge-ok' : 'badge badge-warn';
                 btn.disabled = false;
                 btn.textContent = 'Sync Now';
-                setTimeout(() => location.reload(), 2000);
+                // Re-enable row sync buttons
+                document.querySelectorAll('.btn-sync-one').forEach(b => {
+                    b.disabled = false;
+                    b.textContent = 'Sync';
+                    b.style.color = '';
+                    b.style.borderColor = '';
+                });
+                setTimeout(() => location.reload(), 3000);
             }
         }
     </script>

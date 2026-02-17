@@ -5,7 +5,7 @@
 Automates adding YouTube video links and auto-generated transcripts to Obsidian diary notes. Also creates daily diary notes, audits tags, and detects issues (missing entries, misplaced files, missing uploads).
 
 **Runs:** Daily at 6am via Windows Task Scheduler (`DiaryYouTubeSync`)
-**Backfill:** Every 6 hours via Task Scheduler (`DiaryBackfillTranscripts`) — 10 videos per batch
+**Backfill:** Every 6 hours via Task Scheduler (`DiaryBackfillTranscripts`) — 5 videos per batch
 **Dashboard:** http://localhost:5050 / https://diary.derekgillett.com (Cloudflare Tunnel + Zero Trust)
 **Repo:** github.com/dezgo/diary_sync
 **Log:** `sync.log` (rotating, 1MB max, 5 backups)
@@ -19,7 +19,7 @@ sync.py (main entry point)
   ├── diary_finder.py      → Find diary notes by date (vault-wide search)
   └── note_updater.py      → Analyze + modify note files (add video link + transcript)
 
-backfill.py (gradual transcript backfill, 10 per batch)
+backfill.py (gradual transcript backfill, 5 per batch)
 
 dashboard.py (Flask web UI, port 5050)
   └── templates/dashboard.html
@@ -32,11 +32,31 @@ start_services.bat (starts dashboard + Cloudflare Tunnel on login)
 1. Create today's diary note if it doesn't exist (correct filename, tag, location)
 2. Authenticate with YouTube API (cached refresh token)
 3. Fetch channel uploads within lookback window
-4. For each video, find matching diary note by date
+4. For each video, find matching diary note — **prefers title date** over publish date (handles late-night uploads that cross midnight)
 5. Fetch auto-generated captions via youtube-transcript-api
 6. Update note: add blockquote with video link + formatted transcript
 7. Run tag audit on all diary notes (fix `Diary-YYYY` mismatches)
 8. Check for missing YouTube uploads (diary note exists but no video)
+
+### Single-Date Sync
+
+Sync a single diary entry instead of the full lookback window:
+
+```
+python sync.py --date 2026-02-16
+```
+
+Also available from the dashboard: date picker next to "Sync Now", or per-row "Sync" buttons on pending transcripts.
+
+## IP Block Handling
+
+YouTube blocks IPs that fetch transcripts too aggressively. The system handles this automatically:
+
+- **Detection:** First blocked request immediately triggers a 24h cooldown — no retries
+- **Per-IP:** Cooldown records which IP was blocked (`ip_block` in `state.json`)
+- **VPN-aware:** On each run, checks current external IP against blocked IP. Different IP = safe to sync
+- **Dashboard:** Shows three states — red "Blocked" (same IP), green "OK (VPN)" (different IP), green "OK" (no block)
+- **Rate limiting:** Backfill uses 10s delay with random jitter between fetches; batch size of 5
 
 ## Configuration (`config.yaml`)
 
@@ -53,18 +73,18 @@ start_services.bat (starts dashboard + Cloudflare Tunnel on login)
 
 | File | Purpose |
 |------|---------|
-| `sync.py` | Main entry point — orchestrates everything |
+| `sync.py` | Main entry point — orchestrates everything. Supports `--date YYYY-MM-DD` for single-note sync |
 | `youtube_client.py` | OAuth2 auth + upload listing via YouTube Data API v3 |
-| `transcript_fetcher.py` | Fetch + format auto-generated captions |
+| `transcript_fetcher.py` | Fetch + format auto-generated captions. IP block detection, per-IP cooldown, external IP checking |
 | `diary_finder.py` | Find diary notes by date, vault-wide search, wrong-location detection |
 | `note_updater.py` | Analyze note state, update with video link + transcript, fix tags |
 | `dashboard.py` | Flask web dashboard |
+| `backfill.py` | Gradual transcript backfill (5 videos/batch, 10s+jitter delays) |
 | `config.yaml` | User configuration |
 | `credentials.json` | Google OAuth2 client credentials (from Cloud Console) |
 | `token.json` | Cached OAuth2 refresh token (Brand Account) |
-| `state.json` | Tracks which videos have been processed |
+| `state.json` | Tracks processed videos + IP block cooldown |
 | `sync.log` | Audit log of all sync activity |
-| `backfill.py` | Gradual transcript backfill (10 videos/batch, 5s delays) |
 | `start_services.bat` | Starts dashboard + Cloudflare Tunnel on login |
 | `backups/` | `.bak` copies of notes before modification |
 
@@ -77,6 +97,10 @@ The diary finder accepts any file starting with "Dear Diary" and extracts dates 
 - Case-insensitive month matching with abbreviations (Jan, Feb, Aug, Sept, etc.)
 - Known typos handled (e.g., "Octoboer")
 - Files starting with "Dear Diary" that can't be parsed are flagged as "Unrecognized"
+
+## Note Matching (Late-Night Uploads)
+
+Video titles contain the diary date (e.g. "16 February 2026"). YouTube's publish date is in UTC and can be +1 day for late-night Sydney uploads. The sync **prefers the title date** — it tries that first, and only falls back to publish date if no note exists for the title date.
 
 ## Known Issues
 
@@ -92,11 +116,7 @@ Diary notes are being migrated from Evernote into the Obsidian vault via iCloud.
 
 **Status:** In progress (automated)
 
-Backfill task (`DiaryBackfillTranscripts`) runs every 6 hours, processing 10 videos per batch with 5-second delays to avoid YouTube rate limiting. Initial bulk attempt triggered an IP ban; gradual approach avoids this. Progress tracked in `state.json`.
-
-### Some Videos Map to Wrong Date
-
-YouTube's `publishedAt` is in UTC. Videos recorded late at night in Sydney may appear as the next day in UTC. The sync converts to `Australia/Sydney` timezone, but edge cases around midnight could still mismatch.
+Backfill task (`DiaryBackfillTranscripts`) runs every 6 hours, processing 5 videos per batch with randomised 10s delays to avoid YouTube rate limiting. Progress tracked in `state.json`. If IP gets blocked, enters 24h cooldown automatically; resumes on next run if IP has changed or cooldown has expired.
 
 ### Unrecognized Diary Notes
 
@@ -106,15 +126,16 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 
 | Section | Description |
 |---------|-------------|
-| **Status Bar** | Last sync time, sync summary, "Sync Now" button |
-| **Stat Cards** | Total notes, videos synced, issues count, pending transcripts, wrong location |
+| **Status Bar** | Last sync time, sync summary, date picker, "Sync Now" button |
+| **Cooldown Banner** | Shows when IP blocked (orange) or on different IP/VPN (green) |
+| **Stat Cards** | Total notes, videos synced, issues count, pending transcripts, wrong location, YouTube IP status |
 | **Notes in Wrong Location** | Diary notes not in expected `Diary/YYYY/` folder |
 | **Unrecognized Diary Notes** | "Dear Diary" files where date couldn't be parsed |
 | **Missing Diary Entries** | Days since 6 July 2016 with no diary note at all |
 | **No YouTube Video** | Diary notes (July 2025+) with no matching YouTube upload |
 | **YouTube Video But No Note** | Videos uploaded but no diary note found for that date |
-| **Pending Transcripts** | Videos found but captions not ready yet (retried next sync) |
-| **Recent Notes Without Video Link** | Last 30 days, notes missing `[Video]` link |
+| **Pending Transcripts** | Videos found but captions not ready yet — per-row "Sync" buttons |
+| **Recent Notes Without Video Link** | Last 30 days, notes missing `[Video]` link — per-row "Sync" buttons |
 | **Recently Synced** | Last 20 successfully processed videos |
 
 ## Current Status
@@ -125,6 +146,8 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 
 - [x] YouTube OAuth2 with Brand Account (@dezgo74)
 - [x] Fetch uploads and match to diary notes by date
+- [x] Title-date-first matching for late-night uploads
+- [x] Single-date sync (`--date YYYY-MM-DD` / dashboard per-row buttons)
 - [x] Fetch auto-generated captions and format as prose paragraphs
 - [x] Update notes with blockquote video link + transcript
 - [x] Preserve existing YouTube URLs (including `?si=` share params)
@@ -140,8 +163,10 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 - [x] Rotating audit log
 - [x] Cloudflare Tunnel for remote access (diary.derekgillett.com)
 - [x] Cloudflare Zero Trust with email OTP authentication
-- [x] Gradual backfill (10 videos/batch, every 6 hours)
+- [x] Gradual backfill (5 videos/batch, every 6 hours)
 - [x] GitHub repo (dezgo/diary_sync)
+- [x] Per-IP cooldown with auto VPN detection
+- [x] Dashboard IP status card (OK / Blocked / OK via VPN)
 
 ### What Doesn't Work Yet
 - [ ] **Move misplaced notes** — Waiting for iCloud sync to complete
@@ -150,7 +175,7 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 ## TODOs
 
 ### Priority 1: Backfill
-- [x] Backfill task running automatically (10 videos every 6 hours)
+- [x] Backfill task running automatically (5 videos every 6 hours)
 - [ ] Monitor progress — delete `DiaryBackfillTranscripts` scheduled task once all videos are done
 
 ### Priority 2: Post-iCloud Sync Cleanup

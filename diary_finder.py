@@ -9,17 +9,17 @@ log = logging.getLogger(__name__)
 
 # Full and abbreviated month names, plus known typos from the vault
 MONTHS = {
-    "january": 1, "jan": 1,
-    "february": 2, "feb": 2,
+    "january": 1, "jan": 1, "januay": 1,
+    "february": 2, "feb": 2, "feburary": 2,
     "march": 3, "mar": 3,
     "april": 4, "apr": 4,
     "may": 5,
     "june": 6, "jun": 6,
     "july": 7, "jul": 7,
-    "august": 8, "aug": 8,
+    "august": 8, "aug": 8, "augut": 8,
     "september": 9, "sep": 9, "sept": 9,
     "october": 10, "oct": 10, "octoboer": 10,
-    "november": 11, "nov": 11,
+    "november": 11, "nov": 11, "novembe": 11,
     "december": 12, "dec": 12,
 }
 
@@ -30,7 +30,8 @@ _DATE_RE = re.compile(r"(\d{1,2})\s+(\w+)\s+(\d{4})")
 
 def is_diary_filename(filename: str) -> bool:
     """Check if a filename looks like a diary note."""
-    return filename.lower().startswith("dear diary")
+    name = filename.lower()
+    return name.startswith("dear diary") or name.startswith("dear dairy")
 
 
 def parse_date_from_filename(filename: str) -> date | None:

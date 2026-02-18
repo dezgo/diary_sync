@@ -275,7 +275,7 @@
                     {% for item in wrong_location %}
                     <tr>
                         <td>{{ item.date }}</td>
-                        <td>{{ item.filename }}</td>
+                        <td><a class="yt-link" href="obsidian://open?vault={{ config.vault_name | urlencode }}&file={{ item.current | replace('.md', '') | urlencode }}" target="_blank">{{ item.filename }}</a></td>
                         <td style="color:#f87171">{{ item.current }}</td>
                         <td style="color:#4ade80">{{ item.expected }}</td>
                     </tr>
@@ -340,11 +340,11 @@
     {% if missing_uploads %}
     <div class="section">
         <div class="section-header collapsible" onclick="toggle('missingUploads')">
-            <h2>No YouTube Video for These Days <span class="toggle-icon" id="missingUploads-icon">&#9654;</span></h2>
+            <h2>Not Yet Synced <span class="toggle-icon" id="missingUploads-icon">&#9654;</span></h2>
             <span class="badge badge-warn">{{ missing_upload_count }} days</span>
         </div>
         <p class="section-desc">
-            Diary notes exist but no YouTube upload was found for these dates. You may have recorded a video but forgotten to upload it.
+            Diary notes exist but no matching YouTube video has been synced yet. Try running a sync &mdash; if no upload is found, the date may genuinely have no video.
         </p>
         <div class="collapsible-content" id="missingUploads">
             <table>
@@ -401,7 +401,7 @@
                 {% for item in pending_transcripts %}
                 <tr>
                     <td>{{ item.date }}</td>
-                    <td>{{ item.note }}</td>
+                    <td><a class="yt-link" href="obsidian://open?vault={{ config.vault_name | urlencode }}&file={{ item.path | replace('.md', '') | urlencode }}" target="_blank">{{ item.note }}</a></td>
                     <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
                     <td><button class="btn-sync-one" onclick="syncOne('{{ item.date }}', this)">Sync</button></td>
                 </tr>
@@ -426,7 +426,7 @@
                 {% for item in notes_no_video %}
                 <tr>
                     <td>{{ item.date }}</td>
-                    <td>{{ item.filename }}</td>
+                    <td><a class="yt-link" href="obsidian://open?vault={{ config.vault_name | urlencode }}&file={{ item.path | replace('.md', '') | urlencode }}" target="_blank">{{ item.filename }}</a></td>
                     <td><button class="btn-sync-one" onclick="syncOne('{{ item.date }}', this)">Sync</button></td>
                 </tr>
                 {% endfor %}
@@ -448,7 +448,7 @@
                     {% for item in recent_synced %}
                     <tr>
                         <td>{{ item.date }}</td>
-                        <td>{{ item.note }}</td>
+                        <td><a class="yt-link" href="obsidian://open?vault={{ config.vault_name | urlencode }}&file={{ item.path | replace('.md', '') | urlencode }}" target="_blank">{{ item.note }}</a></td>
                         <td><a class="yt-link" href="https://youtu.be/{{ item.video_id }}" target="_blank">{{ item.video_id }}</a></td>
                     </tr>
                     {% endfor %}

@@ -107,10 +107,13 @@ def get_dashboard_data():
     for vid_id, vid_info in processed.items():
         status_counts[vid_info.get("status", "unknown")] += 1
         if vid_info.get("status") == "complete":
+            vdate = vid_info.get("date", "")
+            vname = vid_info.get("note", "")
             recent_synced.append({
                 "video_id": vid_id,
-                "note": vid_info.get("note", ""),
-                "date": vid_info.get("date", ""),
+                "note": vname,
+                "date": vdate,
+                "path": f"{diary_subdir}/{vdate[:4]}/{vname}" if vdate and vname else "",
             })
     recent_synced.sort(key=lambda x: x["date"], reverse=True)
 
@@ -118,10 +121,13 @@ def get_dashboard_data():
     pending_transcripts = []
     for vid_id, vid_info in processed.items():
         if vid_info.get("status") == "no_transcript":
+            pdate = vid_info.get("date", "")
+            pname = vid_info.get("note", "")
             pending_transcripts.append({
                 "video_id": vid_id,
-                "note": vid_info.get("note", ""),
-                "date": vid_info.get("date", ""),
+                "note": pname,
+                "date": pdate,
+                "path": f"{diary_subdir}/{pdate[:4]}/{pname}" if pdate and pname else "",
             })
     pending_transcripts.sort(key=lambda x: x["date"], reverse=True)
 
@@ -137,6 +143,7 @@ def get_dashboard_data():
                 notes_no_video.append({
                     "date": str(note_date),
                     "filename": os.path.basename(filepath),
+                    "path": os.path.relpath(filepath, vault_path),
                 })
         except Exception:
             pass

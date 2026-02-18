@@ -31,7 +31,11 @@ _DATE_RE = re.compile(r"(\d{1,2})\s+(\w+)\s+(\d{4})")
 def is_diary_filename(filename: str) -> bool:
     """Check if a filename looks like a diary note."""
     name = filename.lower()
-    return name.startswith("dear diary") or name.startswith("dear dairy")
+    return (name.startswith("dear diary")
+            or name.startswith("dear dairy")
+            or name.startswith("dear diari")
+            or name.startswith("deer diary")
+            or name.startswith("do you diary"))
 
 
 def parse_date_from_filename(filename: str) -> date | None:

@@ -129,7 +129,7 @@ def get_dashboard_data():
     cutoff = date.today() - timedelta(days=30)
     notes_no_video = []
     for filepath, note_date in all_notes:
-        if note_date < cutoff:
+        if note_date < cutoff or note_date >= date.today():
             continue
         try:
             analysis = analyze_note(filepath)

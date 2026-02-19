@@ -20,6 +20,7 @@ from youtube_client import get_authenticated_service, get_recent_uploads
 from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown
 from diary_finder import find_diary_note, find_all_diary_notes, parse_date_from_filename, is_diary_filename
 from note_updater import analyze_note, update_note, fix_tag_if_needed
+from summariser import generate_summary
 
 # Full month names for generating filenames
 _MONTH_NAMES = [
@@ -259,10 +260,20 @@ def sync_videos(config: dict, state: dict, target_date: date | None = None) -> t
             stats["no_transcript"] += 1
             continue
 
+        # Generate summary from transcript
+        summary_text = None
+        if not analysis["has_summary"]:
+            summary_text = generate_summary(
+                transcript_text,
+                api_key=config.get("anthropic_api_key"),
+                model=config.get("summary_model"),
+            )
+
         # Update the note
         try:
             modified = update_note(
-                note_path, video["url"], transcript_text, analysis, BACKUP_DIR
+                note_path, video["url"], transcript_text, analysis, BACKUP_DIR,
+                summary_text=summary_text,
             )
             if modified:
                 log.info("  Updated note successfully")

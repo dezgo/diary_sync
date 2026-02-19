@@ -20,3 +20,9 @@ timezone: "Australia/Sydney"
 
 # Log level: DEBUG, INFO, WARNING, ERROR
 log_level: "INFO"
+
+# Anthropic API key for generating daily summaries (or set ANTHROPIC_API_KEY env var)
+anthropic_api_key: "sk-ant-..."
+
+# Claude model for summaries (default: claude-haiku-4-5-20251001)
+# summary_model: "claude-haiku-4-5-20251001"

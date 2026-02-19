@@ -21,6 +21,7 @@ from youtube_client import get_authenticated_service, get_recent_uploads
 from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldown
 from diary_finder import find_diary_note
 from note_updater import analyze_note, update_note
+from summariser import generate_summary
 from sync import parse_date_from_title
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -193,10 +194,20 @@ def main():
             failed += 1
             continue
 
+        # Generate summary from transcript
+        summary_text = None
+        if not analysis["has_summary"]:
+            summary_text = generate_summary(
+                transcript_text,
+                api_key=config.get("anthropic_api_key"),
+                model=config.get("summary_model"),
+            )
+
         # Update the note
         try:
             modified = update_note(
-                note_path, video["url"], transcript_text, analysis, BACKUP_DIR
+                note_path, video["url"], transcript_text, analysis, BACKUP_DIR,
+                summary_text=summary_text,
             )
             if modified:
                 log.info("  Updated note successfully")

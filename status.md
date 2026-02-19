@@ -17,7 +17,8 @@ sync.py (main entry point)
   ├── youtube_client.py    → YouTube Data API v3 (OAuth2, Brand Account @dezgo74)
   ├── transcript_fetcher.py → youtube-transcript-api (auto-generated captions)
   ├── diary_finder.py      → Find diary notes by date (vault-wide search)
-  └── note_updater.py      → Analyze + modify note files (add video link + transcript)
+  ├── note_updater.py      → Analyze + modify note files (add video link + transcript + summary)
+  └── summariser.py        → Claude Haiku AI summary generation (Anthropic SDK)
 
 backfill.py (gradual transcript backfill, 5 per batch)
 
@@ -34,9 +35,10 @@ start_services.bat (starts dashboard + Cloudflare Tunnel on login)
 3. Fetch channel uploads within lookback window
 4. For each video, find matching diary note — **prefers title date** over publish date (handles late-night uploads that cross midnight)
 5. Fetch auto-generated captions via youtube-transcript-api
-6. Update note: add blockquote with video link + formatted transcript
-7. Run tag audit on all diary notes (fix `Diary-YYYY` mismatches)
-8. Check for missing YouTube uploads (diary note exists but no video)
+6. Generate AI summary of transcript via Claude Haiku (best-effort, non-blocking)
+7. Update note: add `## Summary` section + blockquote with video link + formatted transcript
+8. Run tag audit on all diary notes (fix `Diary-YYYY` mismatches)
+9. Check for missing YouTube uploads (diary note exists but no video)
 
 ### Single-Date Sync
 
@@ -68,6 +70,8 @@ YouTube blocks IPs that fetch transcripts too aggressively. The system handles t
 | `lookback_days` | `30` | How far back to sync videos |
 | `transcript_lang` | `en` | Caption language |
 | `timezone` | `Australia/Sydney` | For converting YouTube UTC timestamps |
+| `anthropic_api_key` | `sk-ant-...` | API key for Claude summary generation (or use `ANTHROPIC_API_KEY` env var) |
+| `summary_model` | `claude-haiku-4-5-20251001` | Claude model for summaries (optional, defaults to Haiku) |
 
 ## Key Files
 
@@ -77,7 +81,8 @@ YouTube blocks IPs that fetch transcripts too aggressively. The system handles t
 | `youtube_client.py` | OAuth2 auth + upload listing via YouTube Data API v3 |
 | `transcript_fetcher.py` | Fetch + format auto-generated captions. IP block detection, per-IP cooldown, external IP checking |
 | `diary_finder.py` | Find diary notes by date, vault-wide search, wrong-location detection |
-| `note_updater.py` | Analyze note state, update with video link + transcript, fix tags |
+| `note_updater.py` | Analyze note state, update with video link + transcript + summary, fix tags |
+| `summariser.py` | Generate concise daily summary from transcript via Claude Haiku (Anthropic SDK) |
 | `dashboard.py` | Flask web dashboard |
 | `backfill.py` | Gradual transcript backfill (5 videos/batch, 10s+jitter delays) |
 | `config.yaml` | User configuration |
@@ -149,7 +154,8 @@ Some older files have mangled filenames that can't be parsed (e.g., `Dear Diary,
 - [x] Title-date-first matching for late-night uploads
 - [x] Single-date sync (`--date YYYY-MM-DD` / dashboard per-row buttons)
 - [x] Fetch auto-generated captions and format as prose paragraphs
-- [x] Update notes with blockquote video link + transcript
+- [x] AI-generated daily summary via Claude Haiku (above transcript, best-effort)
+- [x] Update notes with `## Summary` + blockquote video link + transcript
 - [x] Preserve existing YouTube URLs (including `?si=` share params)
 - [x] Replace placeholder `[Video](https://a)` links with real URLs
 - [x] Tag audit and auto-correction (`Diary-YYYY`)

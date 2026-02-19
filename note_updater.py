@@ -12,6 +12,7 @@ VIDEO_LINK_RE = re.compile(r"\[Video\]\((https?://[^\)]+)\)")
 PLACEHOLDER_RE = re.compile(r"\[Video\]\(https?://a\)")
 MEDIA_EMBED_RE = re.compile(r"!\[\[.*?\]\]")
 DIARY_TAG_RE = re.compile(r"Diary-(\d{4})")
+SUMMARY_HEADING_RE = re.compile(r"^#{1,3}\s+Summary\s*$", re.IGNORECASE)
 
 
 def analyze_note(filepath: str) -> dict:
@@ -28,6 +29,7 @@ def analyze_note(filepath: str) -> dict:
         "has_video_link": False,
         "has_placeholder": False,
         "has_blockquote_transcript": False,
+        "has_summary": False,
         "video_url": None,
         "video_line_index": None,
         "video_in_blockquote": False,
@@ -36,6 +38,8 @@ def analyze_note(filepath: str) -> dict:
     }
 
     for i, line in enumerate(lines):
+        if SUMMARY_HEADING_RE.match(line.strip()):
+            result["has_summary"] = True
         stripped = line.strip()
 
         # Check for [Video](...) link
@@ -77,6 +81,7 @@ def update_note(
     transcript_text: str,
     analysis: dict,
     backup_dir: str,
+    summary_text: str | None = None,
 ) -> bool:
     """Update a diary note with video link and/or transcript.
 
@@ -87,6 +92,9 @@ def update_note(
        → Replace with blockquote video link + transcript
     3. Real [Video](url) already in blockquote with transcript → skip (return False)
     4. No [Video] line at all → insert blockquote video+transcript after media embeds
+
+    If summary_text is provided and no summary section exists yet, a ## Summary
+    section is inserted above the transcript blockquote.
 
     Returns True if the note was modified, False if skipped.
     """
@@ -149,6 +157,10 @@ def update_note(
             )
             log.info(f"Wrapped standalone video link in blockquote with transcript")
 
+    # Insert summary section above the transcript blockquote if provided
+    if summary_text and not analysis["has_summary"]:
+        _insert_summary(lines, summary_text)
+
     new_content = "\n".join(lines)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(new_content)
@@ -199,6 +211,24 @@ def fix_tag_if_needed(filepath: str, expected_year: int, backup_dir: str) -> boo
 
     log.warning(f"No tags section found in {os.path.basename(filepath)}, skipping tag fix")
     return False
+
+
+def _insert_summary(lines: list[str], summary_text: str):
+    """Insert a ## Summary section above the first blockquote line."""
+    # Find the first blockquote line (the video link / transcript)
+    bq_idx = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith(">"):
+            bq_idx = i
+            break
+
+    if bq_idx is None:
+        # No blockquote found — insert at the end
+        bq_idx = len(lines)
+
+    summary_block = ["## Summary", "", summary_text, ""]
+    for k, sline in enumerate(summary_block):
+        lines.insert(bq_idx + k, sline)
 
 
 def _has_nearby_blockquote(lines: list[str], from_idx: int) -> bool:

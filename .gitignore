@@ -19,3 +19,8 @@ __pycache__/
 
 # Config (contains local paths)
 config.yaml
+
+# Local agent settings / scratch / crash dumps
+.claude/
+*.stackdump
+temp_entry_*.txt

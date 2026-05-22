@@ -5,6 +5,7 @@ import logging
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -28,8 +29,12 @@ def get_authenticated_service(credentials_path: str, token_path: str):
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             log.info("Refreshing expired OAuth2 token")
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except RefreshError:
+                log.warning("Refresh token expired or revoked — re-authenticating")
+                creds = None
+        if not creds or not creds.valid:
             log.info("No valid token found — launching browser for OAuth2 consent")
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
             creds = flow.run_local_server(port=0)
@@ -94,6 +99,7 @@ def get_recent_uploads(
                     "video_id": video_id,
                     "title": item["snippet"]["title"],
                     "published_date": pub_date,
+                    "published_at": published_local,
                     "url": f"https://youtu.be/{video_id}",
                 }
             )

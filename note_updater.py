@@ -6,13 +6,28 @@ import shutil
 import logging
 from datetime import date
 
+from photo_finder import POTD_FILENAME_RE
+
 log = logging.getLogger(__name__)
 
 VIDEO_LINK_RE = re.compile(r"\[Video\]\((https?://[^\)]+)\)")
 PLACEHOLDER_RE = re.compile(r"\[Video\]\(https?://a\)")
-MEDIA_EMBED_RE = re.compile(r"!\[\[.*?\]\]")
+MEDIA_EMBED_RE = re.compile(r"!\[\[(.*?)\]\]")
 DIARY_TAG_RE = re.compile(r"Diary-(\d{4})")
 SUMMARY_HEADING_RE = re.compile(r"^#{1,3}\s+Summary\s*$", re.IGNORECASE)
+
+
+def _extract_embedded_filenames(lines: list[str]) -> set[str]:
+    """Return the set of basenames already embedded via ![[name]] in the note."""
+    out: set[str] = set()
+    for line in lines:
+        for m in MEDIA_EMBED_RE.finditer(line):
+            target = m.group(1).strip()
+            # Strip any |alias or #heading from the wikilink target
+            target = target.split("|", 1)[0].split("#", 1)[0]
+            # Use just the basename so we match regardless of stored path
+            out.add(target.rsplit("/", 1)[-1])
+    return out
 
 
 def analyze_note(filepath: str) -> dict:
@@ -33,6 +48,7 @@ def analyze_note(filepath: str) -> dict:
         "video_url": None,
         "video_line_index": None,
         "video_in_blockquote": False,
+        "embedded_filenames": _extract_embedded_filenames(lines),
         "content": content,
         "lines": lines,
     }
@@ -75,6 +91,72 @@ def analyze_note(filepath: str) -> dict:
     return result
 
 
+def extract_note_text(analysis: dict) -> str | None:
+    """Extract summarisable text from a diary note.
+
+    For notes with a video transcript: extracts the blockquote transcript text.
+    For text-only notes: extracts body text after frontmatter, skipping media embeds.
+
+    Returns the text, or None if the note has no meaningful content.
+    """
+    lines = analysis["lines"]
+
+    # Case A: has blockquote transcript — extract it
+    if analysis["has_blockquote_transcript"] and analysis["video_line_index"] is not None:
+        paragraphs = []
+        current = []
+        for i in range(analysis["video_line_index"] + 1, len(lines)):
+            line = lines[i]
+            stripped = line.strip()
+            if not stripped.startswith(">") and stripped != "":
+                break  # End of blockquote
+            if stripped in ("", ">"):
+                if current:
+                    paragraphs.append(" ".join(current))
+                    current = []
+                continue
+            # Strip leading > and whitespace
+            text = stripped[1:].strip()
+            if text:
+                current.append(text)
+        if current:
+            paragraphs.append(" ".join(current))
+        text = "\n\n".join(paragraphs)
+        return text if len(text) >= 50 else None
+
+    # Case B: text-only note — extract body after frontmatter
+    in_frontmatter = False
+    frontmatter_end = -1
+    for i, line in enumerate(lines):
+        if line.strip() == "---":
+            if not in_frontmatter:
+                in_frontmatter = True
+            else:
+                frontmatter_end = i
+                break
+
+    start = frontmatter_end + 1 if frontmatter_end >= 0 else 0
+    text_lines = []
+    for i in range(start, len(lines)):
+        stripped = lines[i].strip()
+        if not stripped:
+            continue
+        # Skip media embeds, video links, summary headings
+        if MEDIA_EMBED_RE.search(stripped):
+            continue
+        if VIDEO_LINK_RE.search(stripped):
+            continue
+        if SUMMARY_HEADING_RE.match(stripped):
+            continue
+        # Skip standalone blockquote markers
+        if stripped == ">":
+            continue
+        text_lines.append(stripped)
+
+    text = "\n".join(text_lines)
+    return text if len(text) >= 50 else None
+
+
 def update_note(
     filepath: str,
     video_url: str,
@@ -82,36 +164,65 @@ def update_note(
     analysis: dict,
     backup_dir: str,
     summary_text: str | None = None,
+    photo_filenames: list[str] | None = None,
 ) -> bool:
-    """Update a diary note with video link and/or transcript.
+    """Update a diary note with video link, transcript, and/or photo embeds.
 
     Scenarios:
     1. Placeholder [Video](https://a) with existing blockquote text
        → Replace placeholder URL with real URL, leave existing text alone
     2. Placeholder [Video](https://a) with NO existing blockquote text
        → Replace with blockquote video link + transcript
-    3. Real [Video](url) already in blockquote with transcript → skip (return False)
+    3. Real [Video](url) already in blockquote with transcript → skip video update
     4. No [Video] line at all → insert blockquote video+transcript after media embeds
 
     If summary_text is provided and no summary section exists yet, a ## Summary
     section is inserted above the transcript blockquote.
+
+    If photo_filenames is provided, any not already embedded in the note are
+    inserted as ![[name]] lines right after the frontmatter. Photo insertion
+    runs even when the video portion is already complete.
 
     Returns True if the note was modified, False if skipped.
     """
     lines = analysis["lines"]
     idx = analysis["video_line_index"]
 
-    # Scenario 3: already has real video link + transcript — nothing to do
-    if (
+    # Determine which photos still need embedding (idempotent)
+    new_photos: list[str] = []
+    if photo_filenames:
+        already = analysis.get("embedded_filenames", set())
+        new_photos = [p for p in photo_filenames if p not in already]
+
+    video_already_done = (
         analysis["has_video_link"]
         and not analysis["has_placeholder"]
         and analysis["has_blockquote_transcript"]
-    ):
-        log.debug(f"Note already has video link + transcript, skipping")
+    )
+
+    # Nothing to do at all
+    if video_already_done and not new_photos:
+        log.debug(f"Note already has video link + transcript and all photos embedded, skipping")
         return False
 
     # Back up before modifying
     _backup_note(filepath, backup_dir)
+
+    # Insert photos first so subsequent insertion indices for the video block
+    # remain valid (photos go above the blockquote either way).
+    if new_photos:
+        _insert_photo_embeds(lines, new_photos)
+        # idx may have shifted if video link was below the frontmatter
+        if idx is not None:
+            idx += len(new_photos)
+        log.info(f"Embedded {len(new_photos)} photo(s): {', '.join(new_photos)}")
+
+    if video_already_done:
+        # Photos added (above), video already done — write out and return.
+        new_content = "\n".join(lines)
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        return True
 
     if analysis["has_placeholder"]:
         if analysis["has_blockquote_transcript"] or _has_nearby_blockquote(lines, idx):
@@ -168,6 +279,27 @@ def update_note(
     return True
 
 
+def embed_photos(filepath: str, photo_filenames: list[str], backup_dir: str) -> bool:
+    """Add photo embeds to an existing note without touching the video flow.
+
+    Idempotent — filenames already embedded are skipped. Returns True if the
+    note was modified.
+    """
+    analysis = analyze_note(filepath)
+    already = analysis.get("embedded_filenames", set())
+    new_photos = [p for p in photo_filenames if p not in already]
+    if not new_photos:
+        return False
+
+    _backup_note(filepath, backup_dir)
+    lines = analysis["lines"]
+    _insert_photo_embeds(lines, new_photos)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    log.info(f"Embedded {len(new_photos)} photo(s) in {os.path.basename(filepath)}: {', '.join(new_photos)}")
+    return True
+
+
 def fix_tag_if_needed(filepath: str, expected_year: int, backup_dir: str) -> bool:
     """Check and fix the Diary-YYYY tag in a note's frontmatter.
 
@@ -191,7 +323,7 @@ def fix_tag_if_needed(filepath: str, expected_year: int, backup_dir: str) -> boo
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(new_content)
         log.info(
-            f"Fixed tag {existing_tag} → {expected_tag} in {os.path.basename(filepath)}"
+            f"Fixed tag {existing_tag} -> {expected_tag} in {os.path.basename(filepath)}"
         )
         return True
 
@@ -211,6 +343,55 @@ def fix_tag_if_needed(filepath: str, expected_year: int, backup_dir: str) -> boo
 
     log.warning(f"No tags section found in {os.path.basename(filepath)}, skipping tag fix")
     return False
+
+
+_EMBED_LINE_RE = re.compile(r"^!\[\[(Pasted image [^\]]+)\]\]\s*$")
+
+
+def _photo_sort_key(filename: str):
+    """Order the leading photo block: selfie(s) first, photo-of-day (the
+    noon-stamped filename) last, each group stable by timestamp."""
+    is_potd = 1 if POTD_FILENAME_RE.match(filename) else 0
+    m = re.search(r"\d{14}", filename)
+    return (is_potd, m.group(0) if m else "")
+
+
+def _insert_photo_embeds(lines: list[str], filenames: list[str]):
+    """Insert ![[filename]] embeds just after the frontmatter, keeping the
+    leading Pasted-image block ordered selfie-first then photo-of-day.
+
+    Rather than blindly prepending, the existing contiguous photo block is merged
+    with the new filenames and re-sorted, so adding the POTD to a note that
+    already has the selfie (or vice versa) always yields selfie → POTD order.
+
+    Mutates `lines` in place. Filenames assumed to be new (not already embedded);
+    de-duplication is the caller's responsibility.
+    """
+    frontmatter_end = -1
+    in_fm = False
+    for i, line in enumerate(lines):
+        if line.strip() == "---":
+            if not in_fm:
+                in_fm = True
+            else:
+                frontmatter_end = i
+                break
+
+    insert_at = frontmatter_end + 1 if frontmatter_end >= 0 else 0
+
+    # Absorb the existing contiguous Pasted-image block so we can re-sort it.
+    block_end = insert_at
+    existing: list[str] = []
+    while block_end < len(lines):
+        m = _EMBED_LINE_RE.match(lines[block_end])
+        if not m:
+            break
+        existing.append(m.group(1))
+        block_end += 1
+
+    combined = existing + [f for f in filenames if f not in existing]
+    combined.sort(key=_photo_sort_key)
+    lines[insert_at:block_end] = [f"![[{fn}]]" for fn in combined]
 
 
 def _insert_summary(lines: list[str], summary_text: str):

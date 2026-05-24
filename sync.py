@@ -22,16 +22,37 @@ from diary_finder import find_diary_note, find_all_diary_notes, parse_date_from_
 from note_updater import analyze_note, update_note, fix_tag_if_needed, embed_photos
 from summariser import generate_summary
 from photo_finder import (
-    find_selfie,
+    find_selfie_in_drop_dir,
     find_photo_of_day,
     find_potd_in_drop_dir,
     prepare_for_embed,
     classify_embedded_photos,
+    resolve_drop_selfie_date,
     selfie_diary_date,
     _read_capture_time,
     _date_from_filename,
     _is_image,
 )
+
+
+def _make_selfie_coverage_check(config: dict):
+    """Build a closure for resolve_drop_selfie_date's `is_day_covered` arg.
+
+    Returns is_covered(check_date) -> bool, which is True if the diary note for
+    check_date already has a selfie embedded. Used by the catch-up rule to
+    decide whether a morning selfie should attribute to the previous day.
+    """
+    vault_path = config["vault_path"]
+    diary_subdir = config.get("diary_subdir", "Diary")
+
+    def is_covered(check_date: date) -> bool:
+        note_path = find_diary_note(vault_path, diary_subdir, check_date)
+        if not note_path:
+            return False
+        a = analyze_note(note_path)
+        return classify_embedded_photos(a.get("embedded_filenames", set()))["has_selfie"]
+
+    return is_covered
 
 # Full month names for generating filenames
 _MONTH_NAMES = [
@@ -71,72 +92,71 @@ BACKUP_DIR = os.path.join(SCRIPT_DIR, "backups")
 
 def _gather_photos_for_note(
     config: dict,
-    video: dict,
     vdate: date,
     analysis: dict,
 ) -> list[str]:
     """Locate selfie + photo-of-day for this note and copy them into the vault.
 
-    Returns the list of attachment filenames to embed, fetching only the photos
-    the note is missing (so a note that already has the POTD still gets a selfie
-    backfilled, and vice versa). Returns an empty list when both are already
-    present or iCloud isn't configured.
+    Both photos come from drop folders that the phone shares into via
+    Share-Sheet Shortcuts. Returns the list of attachment filenames to embed,
+    fetching only the photos the note is missing. Returns an empty list when
+    both are already present or no drop folders are configured.
     """
     coverage = classify_embedded_photos(analysis.get("embedded_filenames", set()))
     if coverage["has_selfie"] and coverage["has_potd"]:
         log.debug("  Note already has selfie + photo-of-day; skipping auto-embed")
         return []
 
-    icloud_photos = config.get("icloud_photos_dir")
-    shared_root = config.get("photo_of_day_shared_dir")
-    if not icloud_photos and not shared_root:
-        log.debug("  iCloud paths not configured; skipping photo lookup")
-        return []
-
     from pathlib import Path
+    from datetime import datetime, time
     vault_root = Path(config["vault_path"])
     attachments_subdir = config.get("attachments_subdir", "attachments/Diary")
-    photos_dir = Path(icloud_photos) if icloud_photos else None
-    shared_dir = Path(shared_root) if shared_root else None
-    album_fmt = config.get("photo_of_day_album_format", "Photo of the day {year}")
-    window = int(config.get("selfie_window_minutes", 60))
     cutoff = int(config.get("selfie_day_cutoff_hour", 5))
 
     filenames: list[str] = []
 
-    # Selfie: closest EXIF capture to YouTube upload time (only if missing)
-    upload_time = video.get("published_at")
-    delete_after = bool(config.get("delete_selfie_after_embed", False))
-    if not coverage["has_selfie"] and photos_dir and upload_time:
-        try:
-            selfie = find_selfie(upload_time, photos_dir, window_minutes=window,
-                                 diary_date=vdate, day_cutoff_hour=cutoff)
+    # Selfie: pull from the selfie drop folder (only if missing).
+    if not coverage["has_selfie"]:
+        selfie_root = config.get("selfie_drop_dir")
+        selfie_dir = Path(selfie_root) if selfie_root else None
+        selfie_delete = bool(config.get("selfie_drop_delete_after", True))
+        if selfie_dir:
+            is_covered = _make_selfie_coverage_check(config)
+            try:
+                selfie = find_selfie_in_drop_dir(vdate, selfie_dir,
+                                                 day_cutoff_hour=cutoff,
+                                                 is_day_covered=is_covered)
+            except Exception as e:
+                log.error(f"  Drop-folder selfie lookup failed: {e}", exc_info=True)
+                selfie = None
             if selfie:
-                # Stamp by the photo's capture time, not the upload time: two
-                # entries uploaded in the same second (e.g. a catch-up upload)
-                # would otherwise collide on one filename and share a photo.
-                selfie_when = _read_capture_time(selfie) or upload_time
+                # Stamp at evening of the diary date (taken from the filename
+                # via find_selfie_in_drop_dir). Must not be noon — noon is the
+                # POTD marker per classify_embedded_photos.
+                selfie_when = datetime.combine(vdate, time(21, 0))
                 fname = prepare_for_embed(selfie, vault_root, attachments_subdir, selfie_when)
                 if fname:
                     filenames.append(fname)
-                    if delete_after:
+                    if selfie_delete:
                         dest = vault_root / attachments_subdir / str(selfie_when.year) / fname
                         if dest.is_file() and dest.stat().st_size > 0:
                             try:
                                 selfie.unlink()
-                                log.info(f"  Deleted selfie source from iCloud: {selfie.name}")
+                                log.info(f"  Removed selfie from drop folder: {selfie.name}")
                             except OSError as e:
-                                log.warning(f"  Could not delete selfie source: {e}")
+                                log.warning(f"  Could not delete drop selfie: {e}")
                         else:
                             log.warning(f"  Skipping selfie delete; embed validation failed for {dest}")
-        except Exception as e:
-            log.error(f"  Selfie lookup failed: {e}", exc_info=True)
 
-    # Photo of the day (only if missing): prefer the phone "drop folder" (a
-    # reliably-synced Google Drive folder you share the photo into); fall back
-    # to the iCloud shared album.
+    # Photo of the day (only if missing): prefer the phone "drop folder"; fall
+    # back to the iCloud shared album for older entries that pre-date the drop
+    # folder workflow.
     if not coverage["has_potd"]:
-        from datetime import datetime, time
+        icloud_photos = config.get("icloud_photos_dir")
+        shared_root = config.get("photo_of_day_shared_dir")
+        photos_dir = Path(icloud_photos) if icloud_photos else None
+        shared_dir = Path(shared_root) if shared_root else None
+        album_fmt = config.get("photo_of_day_album_format", "Photo of the day {year}")
         drop_root = config.get("photo_of_day_drop_dir")
         drop_dir = Path(drop_root) if drop_root else None
         drop_delete = bool(config.get("photo_of_day_drop_delete_after", True))
@@ -249,6 +269,93 @@ def drain_potd_drop_folder(config: dict) -> int:
     if already:
         log.info(f"  Drop folder: {len(already)} file(s) for days that already have a "
                  f"POTD; left untouched ({', '.join(str(d) for d in already)})")
+    return embedded
+
+
+def drain_selfie_drop_folder(config: dict) -> int:
+    """Ingest *every* photo sitting in the selfie drop folder into its diary note.
+
+    Symmetric with drain_potd_drop_folder: each file is mapped to a diary day
+    via resolve_drop_selfie_date (filename + catch-up rule), embedded as that
+    day's selfie if the note doesn't already have one, then deleted. If the
+    resolved day already has a selfie, the drop file is also deleted — saves
+    a manual cleanup pass when you've bulk-added files that are already in
+    Obsidian. Returns the number embedded.
+    """
+    drop_root = config.get("selfie_drop_dir")
+    if not drop_root:
+        return 0
+
+    from pathlib import Path
+    from datetime import datetime, time
+
+    drop_dir = Path(drop_root)
+    if not drop_dir.is_dir():
+        return 0
+
+    vault_root = Path(config["vault_path"])
+    diary_subdir = config.get("diary_subdir", "Diary")
+    attachments_subdir = config.get("attachments_subdir", "attachments/Diary")
+    cutoff = int(config.get("selfie_day_cutoff_hour", 17))
+    delete_after = bool(config.get("selfie_drop_delete_after", True))
+    is_covered = _make_selfie_coverage_check(config)
+
+    embedded = 0
+    deleted_dupes = 0
+    # Sort lexically — filenames are yyyy-MM-dd.jpg, so this is date-ascending,
+    # which lets earlier days grab their slot before later morning catch-ups
+    # try to back-shift onto them.
+    for entry in sorted(drop_dir.iterdir()):
+        if not entry.is_file() or not _is_image(entry):
+            continue
+
+        d = resolve_drop_selfie_date(entry, cutoff, is_covered)
+        if d is None:
+            log.warning(f"  Drop selfie {entry.name}: can't determine its date; leaving it")
+            continue
+
+        note_path = find_diary_note(config["vault_path"], diary_subdir, d)
+        if not note_path:
+            try:
+                note_path = create_diary_note(config, d)
+            except Exception as e:
+                log.error(f"  Drop selfie {entry.name}: couldn't find/create note for {d}: {e}")
+                continue
+
+        analysis = analyze_note(note_path)
+        if classify_embedded_photos(analysis.get("embedded_filenames", set()))["has_selfie"]:
+            # Already-covered day: delete the drop file and move on.
+            if delete_after:
+                try:
+                    entry.unlink()
+                    deleted_dupes += 1
+                    log.info(f"  Drop selfie {entry.name}: {d} already has a selfie, deleted")
+                except OSError as e:
+                    log.warning(f"  Drop selfie {entry.name}: couldn't delete duplicate: {e}")
+            continue
+
+        # Stamp at evening of the diary day (taken from the filename, EXIF
+        # capture date as fallback). Must not be noon — noon is the POTD
+        # marker per classify_embedded_photos.
+        selfie_when = datetime.combine(d, time(21, 0))
+        fname = prepare_for_embed(entry, vault_root, attachments_subdir, selfie_when)
+        if not fname:
+            log.error(f"  Drop selfie {entry.name}: failed to prepare for embed")
+            continue
+        try:
+            if embed_photos(note_path, [fname], str(BACKUP_DIR)):
+                embedded += 1
+                log.info(f"  Drop selfie embedded for {d}: {fname} -> {os.path.basename(note_path)}")
+            if delete_after:
+                dest = vault_root / attachments_subdir / str(selfie_when.year) / fname
+                if dest.is_file() and dest.stat().st_size > 0:
+                    entry.unlink(missing_ok=True)
+        except Exception as e:
+            log.error(f"  Drop selfie {entry.name}: embed failed: {e}", exc_info=True)
+
+    if deleted_dupes:
+        log.info(f"  Drop folder: deleted {deleted_dupes} selfie(s) for days "
+                 f"that already had one embedded")
     return embedded
 
 
@@ -427,7 +534,7 @@ def sync_videos(config: dict, state: dict, target_date: date | None = None) -> t
             continue
 
         # Gather photos up-front (cheap when nothing to do)
-        photo_filenames = _gather_photos_for_note(config, video, vdate, analysis)
+        photo_filenames = _gather_photos_for_note(config, vdate, analysis)
 
         # Video already done, just adding photos — bypass transcript fetch entirely
         if video_done:
@@ -684,16 +791,22 @@ def main():
     finally:
         save_state(state)
 
-    # Drain the POTD drop folder — ingest every dropped photo regardless of date,
+    # Drain the drop folders — ingest every dropped photo regardless of date,
     # lookback, or complete-state (skip in single-date mode; that path handles its
     # own date via _gather_photos_for_note).
     if not target_date:
+        try:
+            n = drain_selfie_drop_folder(config)
+            if n:
+                log.info(f"Drop folder: embedded {n} selfie file(s)")
+        except Exception as e:
+            log.error(f"Selfie drop-folder drain failed: {e}", exc_info=True)
         try:
             n = drain_potd_drop_folder(config)
             if n:
                 log.info(f"Drop folder: embedded {n} photo-of-day file(s)")
         except Exception as e:
-            log.error(f"Drop-folder drain failed: {e}", exc_info=True)
+            log.error(f"POTD drop-folder drain failed: {e}", exc_info=True)
 
     # Tag audit and missing upload check (skip in single-date mode)
     if not target_date:

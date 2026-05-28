@@ -164,35 +164,27 @@ def update_note(
     analysis: dict,
     backup_dir: str,
     summary_text: str | None = None,
-    photo_filenames: list[str] | None = None,
 ) -> bool:
-    """Update a diary note with video link, transcript, and/or photo embeds.
+    """Update a diary note with video link and transcript.
 
     Scenarios:
     1. Placeholder [Video](https://a) with existing blockquote text
        → Replace placeholder URL with real URL, leave existing text alone
     2. Placeholder [Video](https://a) with NO existing blockquote text
        → Replace with blockquote video link + transcript
-    3. Real [Video](url) already in blockquote with transcript → skip video update
+    3. Real [Video](url) already in blockquote with transcript → skip
     4. No [Video] line at all → insert blockquote video+transcript after media embeds
 
     If summary_text is provided and no summary section exists yet, a ## Summary
     section is inserted above the transcript blockquote.
 
-    If photo_filenames is provided, any not already embedded in the note are
-    inserted as ![[name]] lines right after the frontmatter. Photo insertion
-    runs even when the video portion is already complete.
+    Photo embeds are handled separately by embed_photos (called from sync.py's
+    drop-folder drain).
 
     Returns True if the note was modified, False if skipped.
     """
     lines = analysis["lines"]
     idx = analysis["video_line_index"]
-
-    # Determine which photos still need embedding (idempotent)
-    new_photos: list[str] = []
-    if photo_filenames:
-        already = analysis.get("embedded_filenames", set())
-        new_photos = [p for p in photo_filenames if p not in already]
 
     video_already_done = (
         analysis["has_video_link"]
@@ -200,29 +192,11 @@ def update_note(
         and analysis["has_blockquote_transcript"]
     )
 
-    # Nothing to do at all
-    if video_already_done and not new_photos:
-        log.debug(f"Note already has video link + transcript and all photos embedded, skipping")
+    if video_already_done:
+        log.debug("Note already has video link + transcript, skipping")
         return False
 
-    # Back up before modifying
     _backup_note(filepath, backup_dir)
-
-    # Insert photos first so subsequent insertion indices for the video block
-    # remain valid (photos go above the blockquote either way).
-    if new_photos:
-        _insert_photo_embeds(lines, new_photos)
-        # idx may have shifted if video link was below the frontmatter
-        if idx is not None:
-            idx += len(new_photos)
-        log.info(f"Embedded {len(new_photos)} photo(s): {', '.join(new_photos)}")
-
-    if video_already_done:
-        # Photos added (above), video already done — write out and return.
-        new_content = "\n".join(lines)
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        return True
 
     if analysis["has_placeholder"]:
         if analysis["has_blockquote_transcript"] or _has_nearby_blockquote(lines, idx):

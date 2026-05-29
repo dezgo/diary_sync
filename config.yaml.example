@@ -2,6 +2,11 @@
 vault_path: "C:\\Users\\YourUser\\path\\to\\ObsidianVault"
 diary_subdir: "Diary"
 
+# Folder (under the vault) of scanned PDFs. Each scan without a companion .md
+# next to it gets one created with empty tags for you to fill in. Leave the
+# folder absent to disable the pass.
+scans_subdir: "Scans"
+
 # YouTube channel ID — resolved from your channel
 # To find manually: go to youtube.com/@yourchannel > View Page Source > search "channelId"
 channel_id: "UC..."

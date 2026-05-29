@@ -21,6 +21,7 @@ from transcript_fetcher import fetch_transcript, format_transcript, is_in_cooldo
 from diary_finder import find_diary_note, find_all_diary_notes, parse_date_from_filename, is_diary_filename
 from note_updater import analyze_note, update_note, fix_tag_if_needed, embed_photos
 from summariser import generate_summary
+from scan_companion import ensure_scan_companions
 from photo_finder import (
     prepare_for_embed,
     classify_embedded_photos,
@@ -674,6 +675,16 @@ def main():
                 log.info(f"Drop folder: embedded {n} photo-of-day file(s)")
         except Exception as e:
             log.error(f"POTD drop-folder drain failed: {e}", exc_info=True)
+
+        # Give every scanned PDF a companion note to tag (vault maintenance,
+        # not diary-specific — same idempotent "act only on what's missing"
+        # shape as the drop-folder drains above).
+        try:
+            n = ensure_scan_companions(config)
+            if n:
+                log.info(f"Scan companions: created {n} note(s)")
+        except Exception as e:
+            log.error(f"Scan companion pass failed: {e}", exc_info=True)
 
     # Tag audit and missing upload check (skip in single-date mode)
     if not target_date:

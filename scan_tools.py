@@ -33,6 +33,7 @@ _ILLEGAL = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
 _FRONTMATTER = re.compile(r"(?s)\A---\n(.*?)\n---")
 _EMPTY_TAGS = re.compile(r"(?m)^tags:\s*\[\s*\]\s*$")
 _DATE_FIELD = re.compile(r"(?m)^date:\s*(\d{4}-\d{2}-\d{2})\s*$")
+_DATE_LINE = re.compile(r"(?m)^date:\s*.*$")
 
 
 def load_config() -> dict:
@@ -159,6 +160,14 @@ def _set_tags_block(text: str, tags: list[str]) -> str:
     )
 
 
+def _set_date_field(text: str, date_str: str) -> str:
+    """Set the companion's frontmatter `date:` to date_str. Replaces an existing
+    date line, or inserts one right after the opening `---` if absent."""
+    if _DATE_LINE.search(text):
+        return _DATE_LINE.sub(f"date: {date_str}", text, count=1)
+    return re.sub(r"\A---\n", f"---\ndate: {date_str}\n", text, count=1)
+
+
 def _update_vault_refs(config: dict, old_pdf: str, new_pdf: str,
                        old_stem: str, new_stem: str) -> int:
     """Rewrite links to a renamed scan across every note in the vault.
@@ -184,13 +193,22 @@ def _update_vault_refs(config: dict, old_pdf: str, new_pdf: str,
 
 
 def apply_enrichment(config: dict, pdf_path: str, description: str,
-                     tags: list[str], dry_run: bool = False) -> dict:
+                     tags: list[str], date=None, dry_run: bool = False) -> dict:
     """Apply a reviewed rename + tagging to one scan.
 
-    Builds the new stem as "<ISO date> <description>" (date from the companion's
-    frontmatter; description-only if no date), writes the tags into the
-    companion, renames both the PDF and companion to the new stem, rewrites the
+    Builds the new stem as "<ISO date> <description>" and renames both the PDF
+    and companion to it, writes the tags into the companion, rewrites the
     companion's embed, and fixes any other vault links to the old name.
+
+    The `date` controls the ISO prefix (and the note's frontmatter date):
+      - None (default): use the companion's existing frontmatter date; no prefix
+        if it has none.
+      - "YYYY-MM-DD": use this date for the prefix and rewrite the frontmatter
+        `date:` to match — for when the document's own date (a receipt's
+        purchase date, say) differs from the scan date the companion was born
+        with.
+      - False: no date prefix at all (for undated docs like manuals); the
+        frontmatter date is left as-is.
 
     With dry_run=True nothing is written — the returned dict shows exactly what
     would change, for showing the operator before committing.
@@ -203,11 +221,16 @@ def apply_enrichment(config: dict, pdf_path: str, description: str,
         raise FileNotFoundError(f"Companion not found: {comp}")
 
     text = comp.read_text(encoding="utf-8")
-    date = _date_from_companion(text)
+    if date is None:
+        use_date = _date_from_companion(text)
+    elif date is False:
+        use_date = None
+    else:
+        use_date = date
     desc = _sanitise(description)
     if not desc:
         raise ValueError("Description is empty after sanitising")
-    stem = f"{date} {desc}" if date else desc
+    stem = f"{use_date} {desc}" if use_date else desc
     # Leave headroom under Windows' ~255-char path-segment limit.
     if len(stem) > 120:
         stem = stem[:120].rstrip()
@@ -218,7 +241,7 @@ def apply_enrichment(config: dict, pdf_path: str, description: str,
     result = {
         "old_pdf": pdf.name, "new_pdf": new_pdf.name,
         "old_companion": comp.name, "new_companion": new_comp.name,
-        "tags": tags, "date": date,
+        "tags": tags, "date": use_date,
         "collision": (new_pdf != pdf and new_pdf.exists())
                      or (new_comp != comp and new_comp.exists()),
         "refs_updated": 0, "applied": False,
@@ -227,6 +250,9 @@ def apply_enrichment(config: dict, pdf_path: str, description: str,
         return result
 
     new_text = _set_tags_block(text, tags)
+    # Rewrite the frontmatter date only when an explicit date was supplied.
+    if isinstance(date, str):
+        new_text = _set_date_field(new_text, date)
     new_text = new_text.replace(f"![[{pdf.name}]]", f"![[{new_pdf.name}]]")
     comp.write_text(new_text, encoding="utf-8")
 

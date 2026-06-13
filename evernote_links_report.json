@@ -7,10 +7,10 @@
     "url": "https://www.evernote.com/l/AdiV5PAi8G5OFIOkvyTOnjPudUPzfGd3yJ0",
     "guid": null,
     "context": "Spent a bit of time scheduling meetings with a few different people as a follow-on to the [I.T. meeting](https://www.evernote.com/l/AdiV5PAi8G5OFIOkvyTOnjPudUPzfGd3yJ0) yesterday,",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Outcomes of August 2017 monthly IT meeting",
+    "confidence": "high",
+    "rationale": "Sep 1 journal: I.T. meeting was yesterday (Aug 31); August 2017 monthly IT meeting outcomes note exists"
   },
   {
     "id": "Ashley/Journal Fri 22 Jun 2018.md::70ee6f81-89d7-4e04-b765-78add78f203e::some code",
@@ -46,10 +46,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/9e073b31-fddd-4d16-b690-85a687e16fd9",
     "guid": "9e073b31-fddd-4d16-b690-85a687e16fd9",
     "context": "sheets over the weekend. Keen to run other supplier lists through the same process now. [Investigate Trabeth textiles](https://www.evernote.com/shard/s472/nl/172253540/9e073b31-f",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Trabeth fabric investigation",
+    "confidence": "high",
+    "rationale": "Anchor text matches note title when normalised"
   },
   {
     "id": "Ashley/Journal Mon 23 Apr 2018.md::a863a702-d83b-4334-8988-503bb22cdf09::",
@@ -59,10 +59,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/a863a702-d83b-4334-8988-503bb22cdf09/",
     "guid": "a863a702-d83b-4334-8988-503bb22cdf09",
     "context": "ndbox account. Switch this over to live account Asked Geoff about Rachael’s Optus mobile <https://www.evernote.com/shard/s472/nl/172253540/a863a702-d83b-4334-8988-503bb22cdf09/>",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Rachel Watson move to work Optus account",
+    "confidence": "high",
+    "rationale": "Context: Asked Geoff about Rachael's Optus mobile; note body says exactly \"Asked Geoff about Rachael's Optus mobile\""
   },
   {
     "id": "Ashley/Journal Mon 30 Jul 2018.md::134ba4f7-4837-4938-b409-7b03176431c5::SMS's in BUZ",
@@ -72,10 +72,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/134ba4f7-4837-4938-b409-7b03176431c5",
     "guid": "134ba4f7-4837-4938-b409-7b03176431c5",
     "context": "r using Google Takeout to archive their email Donna, Chris Miris, Tyla Look into sending [SMS's in BUZ](https://www.evernote.com/shard/s472/nl/172253540/134ba4f7-4837-4938-b409-7b",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "BUZ SMS Notifications",
+    "confidence": "medium",
+    "rationale": "Anchor refers to SMS in BUZ; BUZ SMS Notifications is the closest matching note"
   },
   {
     "id": "Ashley/Journal Mon 4 Feb 2019.md::f9c2b11e-637d-4e37-b02b-f91be391b189::few notes about dispatch",
@@ -98,10 +98,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/ceb0b5bd-fa5e-4e2b-a2a2-2edb17635197",
     "guid": "ceb0b5bd-fa5e-4e2b-a2a2-2edb17635197",
     "context": "ll scanned files get synced to another folder, then that folder is moved to Google Drive. [More info here](https://www.evernote.com/shard/s472/nl/172253540/ceb0b5bd-fa5e-4e2b-a2a2-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Scanned files to google drive - speedup",
+    "confidence": "high",
+    "rationale": "Context: scanned files synced to folder then moved to Google Drive; note title is exact match for context"
   },
   {
     "id": "Ashley/Journal Thu 9 Aug 2018.md::5127f38e-50cf-4860-b289-f072a47b1d2d::Now a separate note",
@@ -111,10 +111,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/5127f38e-50cf-4860-b289-f072a47b1d2d",
     "guid": "5127f38e-50cf-4860-b289-f072a47b1d2d",
     "context": "didn't work. They are just checking the nagios box. Will need to investigate this further [Now a separate note](https://www.evernote.com/shard/s472/nl/172253540/5127f38e-50cf-4860-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Add remote host disk space checking to nagios",
+    "confidence": "high",
+    "rationale": "Context: disk space checks added to nagios, not working; note body says exactly \"checking disk space on other hosts, but it's not working\""
   },
   {
     "id": "Ashley/Journal Thu16 Aug 2018.md::3a1090df-e2cc-4e0a-8bd1-abd2cee40ca9::This note",
@@ -124,10 +124,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/3a1090df-e2cc-4e0a-8bd1-abd2cee40ca9",
     "guid": "3a1090df-e2cc-4e0a-8bd1-abd2cee40ca9",
     "context": "ey/Set-up-AUSkey-on-a-USB-stick/) to do it Started updating inventory item descriptions. [This note](https://www.evernote.com/shard/s472/nl/172253540/3a1090df-e2cc-4e0a-8bd1-abd2c",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Change inventory item description to not use code",
+    "confidence": "high",
+    "rationale": "Context: updating inventory item descriptions; note title is exact match for context"
   },
   {
     "id": "Ashley/Journal Tue 12 Mar 2019.md::dbb47fd7-410d-4587-808e-a0d4ddcab53e::Here are my notes so far",
@@ -137,10 +137,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/dbb47fd7-410d-4587-808e-a0d4ddcab53e",
     "guid": "dbb47fd7-410d-4587-808e-a0d4ddcab53e",
     "context": "dead so leaving it charging first to get serial number. Started working on board report. [Here are my notes so far](https://www.evernote.com/shard/s472/nl/172253540/dbb47fd7-410d-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Board report notes",
+    "confidence": "high",
+    "rationale": "Context: started working on board report; Board report notes note exists"
   },
   {
     "id": "Ashley/Journal Tue 15 Jan 2019.1.md::f767199f-5efb-4711-a896-861fc3374b64::these notes",
@@ -150,10 +150,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/f767199f-5efb-4711-a896-861fc3374b64",
     "guid": "f767199f-5efb-4711-a896-861fc3374b64",
     "context": "--- tags: - WB - WB/Ref - WB/Ref/Notes --- Tweak curtains as per [these notes](https://www.evernote.com/shard/s472/nl/172253540/f767199f-5efb-4711-a896-861",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Curtain in Buz",
+    "confidence": "medium",
+    "rationale": "Context: tweak curtains as per these notes; Curtain in Buz describes curtain pricing/configuration in BUZ"
   },
   {
     "id": "Ashley/Journal Tue 2 Oct 2018.md::e7b60be3-18d7-466e-b592-12dfafb0d314::Friday's journal entry",
@@ -163,10 +163,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/e7b60be3-18d7-466e-b592-12dfafb0d314",
     "guid": "e7b60be3-18d7-466e-b592-12dfafb0d314",
     "context": "tags: - WB - WB/Ref - WB/Ref/Notes --- Need to unlock Dave's Samsung phone (see [Friday's journal entry](https://www.evernote.com/shard/s472/nl/172253540/e7b60be3-18d7-46",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Journal Fri 28 Sep 2018",
+    "confidence": "high",
+    "rationale": "Oct 2 is Tuesday; Friday before = Sep 28; exact journal note exists"
   },
   {
     "id": "Ashley/Journal Wed 12 Sep 2018.md::b64f0c63-0135-4655-ac11-d825c330b8e6::Change Zendesk support addresses",
@@ -176,10 +176,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/b64f0c63-0135-4655-ac11-d825c330b8e6",
     "guid": "b64f0c63-0135-4655-ac11-d825c330b8e6",
     "context": "s: - WB - WB/Ref - WB/Ref/Notes --- Recover Matt Nelson to get his calendar back [Change Zendesk support addresses](https://www.evernote.com/shard/s472/nl/172253540/b64f0c",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Change Zendesk support addresses",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Ashley/Journal Wed 20 Feb 2019.md::a15ddf01-58aa-451f-8074-b9ac86f15946::yesterday's journal",
@@ -189,10 +189,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/a15ddf01-58aa-451f-8074-b9ac86f15946",
     "guid": "a15ddf01-58aa-451f-8074-b9ac86f15946",
     "context": "--- tags: - WB - WB/Ref - WB/Ref/Notes --- Step 1 - check out [yesterday's journal](https://www.evernote.com/shard/s472/nl/172253540/a15ddf01-58aa-451f-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Journal Tue 19 Feb 2019",
+    "confidence": "high",
+    "rationale": "Feb 20 is Wednesday; Tuesday before = Feb 19; exact journal note exists"
   },
   {
     "id": "Ashley/Staff Chats.md::24496802-d153-40f8-99fa-f4c15e6efa54::Lil",
@@ -202,10 +202,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/24496802-d153-40f8-99fa-f4c15e6efa54",
     "guid": "24496802-d153-40f8-99fa-f4c15e6efa54",
     "context": "--- tags: - WB --- [Lil](https://www.evernote.com/shard/s472/nl/172253540/24496802-d153-40f8-99fa-f4c15e6efa5",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Lil",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Ashley/Staff Chats.md::f238e1c3-4a87-40c9-9eb2-ab74c4120cf1::Janey",
@@ -215,10 +215,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/f238e1c3-4a87-40c9-9eb2-ab74c4120cf1",
     "guid": "f238e1c3-4a87-40c9-9eb2-ab74c4120cf1",
     "context": "l](https://www.evernote.com/shard/s472/nl/172253540/24496802-d153-40f8-99fa-f4c15e6efa54) [Janey](https://www.evernote.com/shard/s472/nl/172253540/f238e1c3-4a87-40c9-9eb2-ab74c4120",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Janey",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Ashley/Staff Chats.md::0b232274-762b-495d-8c5e-836cc547d8e2::Mabelle",
@@ -228,10 +228,10 @@
     "url": "https://www.evernote.com/shard/s472/nl/172253540/0b232274-762b-495d-8c5e-836cc547d8e2",
     "guid": "0b232274-762b-495d-8c5e-836cc547d8e2",
     "context": "y](https://www.evernote.com/shard/s472/nl/172253540/f238e1c3-4a87-40c9-9eb2-ab74c4120cf1) [Mabelle](https://www.evernote.com/shard/s472/nl/172253540/0b232274-762b-495d-8c5e-836cc54",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Mabelle",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "CW/Computer payment - mail@derekgillett.com - Derek Gillett Mail.md::http://www.evernote.com/l/AAcEwA9UcJBBI6WakRL690rJkEmuLgRMtLM/::",
@@ -267,10 +267,10 @@
     "url": "http://www.evernote.com/shard/s7/sh/40ccab59-ffd6-410e-837f-9e4399343d13/1a7b646f8dd16068ce9e392e52009fae",
     "guid": "40ccab59-ffd6-410e-837f-9e4399343d13",
     "context": "> > > > > > > > > This is the wireless router I've got: > > > > > > > > > > > > > > > > <http://www.evernote.com/shard/s7/sh/40ccab59-ffd6-410e-837f-9e4399343d13/1a7b646f8dd16068",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "TP-LINK TD-W8968 ADSL2+ Wireless-N300 Modem Router with USB Port",
+    "confidence": "medium",
+    "rationale": "Context: \"This is the wireless router I've got\"; TP-LINK note is a wireless router with USB port, tagged Stock-in-Car"
   },
   {
     "id": "CW/Invoices to 17 July.md::https://www.evernote.com/l/AAecLlykymtH_alIBIOlTBOkrJKUbvY7XUc::",
@@ -319,10 +319,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/4be26d33-689e-4855-a6f2-396c0ca52975",
     "guid": "4be26d33-689e-4855-a6f2-396c0ca52975",
     "context": "g IP addresses users access the service from, and warn them when a new one is used - e.g. [cloudflare email](https://www.evernote.com/shard/s7/nl/784504/4be26d33-689e-4855-a6f2-396",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "CloudFlare Alert Your CloudFlare account has been accessed from a new IP Address - derek@computerwhi",
+    "confidence": "high",
+    "rationale": "Anchor text is \"cloudflare email\"; note is a CloudFlare security alert email, exactly the type described in context"
   },
   {
     "id": "Diary/2015/Dear Diary Wed 25 Feb 2015.md::c034dfd4-cd74-4fcd-ad73-323659934dfe::this one",
@@ -423,10 +423,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/aad02582-2d53-439d-9880-2961c2b8835b",
     "guid": "aad02582-2d53-439d-9880-2961c2b8835b",
     "context": "_filename.png]] So fun day today also. Had month-in-review and showed off my progress on [Destination Australia](https://www.evernote.com/shard/s7/nl/784504/aad02582-2d53-439d-988",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Destination Australia",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2016/Dear Diary, it's Friday 23 December 2016.md::d808707e-a847-446b-833e-0140df0eae3c::copy in EN",
@@ -592,10 +592,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/3ecd7d06-3144-41e7-978f-a012d410e708",
     "guid": "3ecd7d06-3144-41e7-978f-a012d410e708",
     "context": "://www.evernote.com/shard/s7/nl/784504/37a1d527-407e-425d-ae85-afd5ee42b0c4). I've got a [sore finger](https://www.evernote.com/shard/s7/nl/784504/3ecd7d06-3144-41e7-978f-a012d410",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sore finger",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2016/Dear Diary, it's Thursday 8 December 2016.md::d2487ea7-8f8e-412e-9305-5368b78b90aa::video",
@@ -644,10 +644,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/a234af50-161c-4dba-9232-afe77e5fcc93",
     "guid": "a234af50-161c-4dba-9232-afe77e5fcc93",
     "context": "hort one today (20mins up mugga way) as have a bit of a sore foot could it be from my new [improvised standing desk](https://www.evernote.com/shard/s7/nl/784504/a234af50-161c-4dba-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Improvised standing desk!",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2016/Dear Diary, it's Tuesday 27 December 2016.md::013d8bd5-c3a6-4957-b8fa-15551a3ab007::this is the jar",
@@ -1099,10 +1099,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/f4701f90-2a4c-4bae-83cc-fdd148d5f775",
     "guid": "f4701f90-2a4c-4bae-83cc-fdd148d5f775",
     "context": "looking pretty good, but damn, I was so tired by the end of today! Made this amaze-balls [vegan curry](https://www.evernote.com/shard/s7/nl/784504/f4701f90-2a4c-4bae-83cc-fdd148d5",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Vegan curry",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2017/Dear Diary, it's Sunday 6 August 2017.md::57289450-64c3-41b5-8b1f-4968f72f1aa0::12 months ago",
@@ -2256,10 +2256,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/b24a15b1-b117-4c99-be73-11edebfd6a97",
     "guid": "b24a15b1-b117-4c99-be73-11edebfd6a97",
     "context": "ownship. Picked up that Mollymook key, then went to bed. Oh, and cooked this really good [vegan curry](https://www.evernote.com/shard/s7/nl/784504/b24a15b1-b117-4c99-be73-11edebfd",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Vegan curry",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2019/Dear Diary, it's Saturday 2 February 2019.md::f5017482-4a7e-426f-a4b3-8ffb5b67e7c4::CMC today",
@@ -3140,10 +3140,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/bcb6e894-2437-4f08-9363-ca3f02dd99c0",
     "guid": "bcb6e894-2437-4f08-9363-ca3f02dd99c0",
     "context": "_2018), and now here I am. It feels like we had quite a full-on day really. I also wrote [this dream diary](https://www.evernote.com/shard/s7/nl/784504/bcb6e894-2437-4f08-9363-ca3",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Dream Diary",
+    "confidence": "medium",
+    "rationale": "Anchor stripped of prefix, unique match to \"Dream Diary\""
   },
   {
     "id": "Diary/2020/Dear Diary, it's Saturday 26 September 2020.md::c94adeef-d07b-41b8-87bf-16d1f900748b::full list of addresses",
@@ -3543,10 +3543,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/b9916737-8434-4518-a902-375f10365bb3",
     "guid": "b9916737-8434-4518-a902-375f10365bb3",
     "context": "nteresting doing cardio outside on the bike than inside at the gym. In fact, I just found [this ad](https://www.evernote.com/shard/s7/nl/784504/b9916737-8434-4518-a902-375f10365bb3",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Adí",
+    "confidence": "medium",
+    "rationale": "Anchor stripped of prefix, unique match to \"Adí\""
   },
   {
     "id": "Diary/2020/Dear Diary, it's Wednesday 25 March 2020.md::633f26cf-780f-4d48-9647-0b265be23cd1::social distancing rules",
@@ -3946,10 +3946,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/9cf8cac5-d3cd-46c9-8bcb-3d868f41a87d",
     "guid": "9cf8cac5-d3cd-46c9-8bcb-3d868f41a87d",
     "context": "highlight of the day was lunch with the whole family and Tom, so 6 of us. We went to the [Soi Noodle bar](https://www.evernote.com/shard/s7/nl/784504/9cf8cac5-d3cd-46c9-8bcb-3d868",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Soi Noodle Bar",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Diary/2021/Dear Diary, it's Thursday 23 December 2021.md::3bc72f9a-2d18-3917-d572-acb1e608f7bb::moved into the Midnight Apartment",
@@ -4427,10 +4427,10 @@
     "url": "https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/",
     "guid": null,
     "context": "ey, y Cassidy. Aqui estan los documentos que requiren. Formato de registro de nacimiento [Sabrina](https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/::Ashley",
@@ -4453,10 +4453,10 @@
     "url": "https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/",
     "guid": null,
     "context": "TCXk4rPpM/), [Ashley](https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/), y [Cassidy](https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/) Acta de nacimi",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/::Sabrina",
@@ -4466,10 +4466,10 @@
     "url": "https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/",
     "guid": null,
     "context": "e8c/) Acta de nacimiento australiana del menor (de hecho Sabrina ya no es menor de edad) [Sabrina](https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/::Ashley",
@@ -4492,10 +4492,10 @@
     "url": "https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/",
     "guid": null,
     "context": "vHZN05c8c/), [Ashley](https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/), y [Cassidy](https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/) Identificatión",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/::Sabrina",
@@ -4505,10 +4505,10 @@
     "url": "https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/",
     "guid": null,
     "context": "Cassidy. Aqui estan los documentos que requiren. > > Formato de registro de nacimiento > [Sabrina](https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/::Ashley",
@@ -4531,10 +4531,10 @@
     "url": "https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/",
     "guid": null,
     "context": "TCXk4rPpM/), [Ashley](https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/), y [Cassidy](https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/) > > Acta de na",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/::Sabrina",
@@ -4544,10 +4544,10 @@
     "url": "https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/",
     "guid": null,
     "context": "> > Acta de nacimiento australiana del menor (de hecho Sabrina ya no es menor de edad) > [Sabrina](https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/::Ashley",
@@ -4570,10 +4570,10 @@
     "url": "https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/",
     "guid": null,
     "context": "vHZN05c8c/), [Ashley](https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/), y [Cassidy](https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/) > > Identifica",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/::Sabrina",
@@ -4583,10 +4583,10 @@
     "url": "https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/",
     "guid": null,
     "context": "ey, y Cassidy. Aqui estan los documentos que requiren. Formato de registro de nacimiento [Sabrina](https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/::Ashley",
@@ -4609,10 +4609,10 @@
     "url": "https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/",
     "guid": null,
     "context": "TCXk4rPpM/), [Ashley](https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/), y [Cassidy](https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/) Acta de nacimi",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/::Sabrina",
@@ -4622,10 +4622,10 @@
     "url": "https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/",
     "guid": null,
     "context": "e8c/) Acta de nacimiento australiana del menor (de hecho Sabrina ya no es menor de edad) [Sabrina](https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/::Ashley",
@@ -4648,10 +4648,10 @@
     "url": "https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/",
     "guid": null,
     "context": "vHZN05c8c/), [Ashley](https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/), y [Cassidy](https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/) Identificatión",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/::Sabrina",
@@ -4661,10 +4661,10 @@
     "url": "https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/",
     "guid": null,
     "context": "y. Aqui estan los documentos que requiren. > > > > Formato de registro de nacimiento > > [Sabrina](https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/::Ashley",
@@ -4687,10 +4687,10 @@
     "url": "https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/",
     "guid": null,
     "context": "TCXk4rPpM/), [Ashley](https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/), y [Cassidy](https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/) > > > > Acta d",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/::Sabrina",
@@ -4700,10 +4700,10 @@
     "url": "https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/",
     "guid": null,
     "context": "> Acta de nacimiento australiana del menor (de hecho Sabrina ya no es menor de edad) > > [Sabrina](https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/::Ashley",
@@ -4726,10 +4726,10 @@
     "url": "https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/",
     "guid": null,
     "context": "vHZN05c8c/), [Ashley](https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/), y [Cassidy](https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/) > > > > Identi",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/::Sabrina",
@@ -4739,10 +4739,10 @@
     "url": "https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/",
     "guid": null,
     "context": "i estan los documentos que requiren. > > > > > > Formato de registro de nacimiento > > > [Sabrina](https://www.evernote.com/l/AAewa4srR8tPRq-jde2bFlJjmQTCXk4rPpM/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/::Ashley",
@@ -4765,10 +4765,10 @@
     "url": "https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/",
     "guid": null,
     "context": "TCXk4rPpM/), [Ashley](https://www.evernote.com/l/AAeFGMeQIO9BIoaULKCmKC1sjxoXq2qwyvs/), y [Cassidy](https://www.evernote.com/l/AAfiq6wD_GRM-bHOB-F2Qvd2NH1En_4Ae8c/) > > > > > > Ac",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/::Sabrina",
@@ -4778,10 +4778,10 @@
     "url": "https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/",
     "guid": null,
     "context": "Acta de nacimiento australiana del menor (de hecho Sabrina ya no es menor de edad) > > > [Sabrina](https://www.evernote.com/l/AAdOcRf1nntEQL5QrniKkUXbq2vHZN05c8c/), [Ashley](https",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Sabrina",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Acta de nacimiento para Sabrina, Ashley, y Cassidy.md::https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/::Ashley",
@@ -4804,10 +4804,10 @@
     "url": "https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/",
     "guid": null,
     "context": "vHZN05c8c/), [Ashley](https://www.evernote.com/l/AAeDx8cIfQRGDpn09k_H7cRHOup4q-JqAkI/), y [Cassidy](https://www.evernote.com/l/AAfLyq2KWm9Lfbm7tAraW4CtLNqeVFrs__Y/) > > > > > > Id",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Cassidy",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Adri application - nab loan.md::http://www.evernote.com/l/AAf_rK4b305AyK7SCGt4GhOjk2PURS2rJh8/::",
@@ -5363,10 +5363,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/98c9360e-62e1-466c-b017-2a9808892978",
     "guid": "98c9360e-62e1-466c-b017-2a9808892978",
     "context": "/9fdf5052-1eba-4048-aa9e-6f2da81efb1c) Passport info PA5451342 14 Dec 2016 - 14 Dec 2021 [Mexican birth certificates process](https://www.evernote.com/shard/s7/nl/784504/98c9360e-",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Mexican Birth certificates process",
+    "confidence": "high",
+    "rationale": "Anchor text exactly matches unique vault note title"
   },
   {
     "id": "Main.5/Random lists - info.md::ab158f8a-ad46-4a5f-bb8e-f46ab90309f4::Inkreativedesign server notes",
@@ -6598,10 +6598,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/84f340c9-50e6-4106-b243-908c8dbb96bd",
     "guid": "84f340c9-50e6-4106-b243-908c8dbb96bd",
     "context": "--- tags: - WB/Ref/Notes --- Work out the [Check Measure Process](https://www.evernote.com/shard/s7/nl/784504/84f340c9-50e6-4106-b24",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Process to do a CM",
+    "confidence": "high",
+    "rationale": "Note says \"Steps for fitters with iPad in field - Check Measure\"; journal says \"Work out Check Measure Process for fitters\""
   },
   {
     "id": "WB/Journal Wed 25 Mar 2020.md::d6ed070f-f1e7-4292-910a-572b1fadc2f8::email here",
@@ -6611,10 +6611,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/d6ed070f-f1e7-4292-910a-572b1fadc2f8",
     "guid": "d6ed070f-f1e7-4292-910a-572b1fadc2f8",
     "context": "ngConfirmation?refno=26974 --- Emailed Joel, Tim, Kev, and Rohan re failed UniFi switch - [email here](https://www.evernote.com/shard/s7/nl/784504/d6ed070f-f1e7-4292-910a-572b1fadc",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Hardware failure after ATEK Security works",
+    "confidence": "high",
+    "rationale": "Journal \"Emailed Joel, Tim, Kev, and Rohan re failed UniFi switch\"; participants in email note match exactly"
   },
   {
     "id": "WB/Journal Wed 3 Jul 2019.md::d2048ea4-5e70-45b4-8cbc-9d9fb6c83ab3::have been scammed",
@@ -6624,10 +6624,10 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/d2048ea4-5e70-45b4-8cbc-9d9fb6c83ab3",
     "guid": "d2048ea4-5e70-45b4-8cbc-9d9fb6c83ab3",
     "context": "ttp://assets.watsonblinds.com.au/hardware/54> And Tim's phone turned up, but I appear to [have been scammed](https://www.evernote.com/shard/s7/nl/784504/d2048ea4-5e70-45b4-8cbc-9d",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "S10 scammer",
+    "confidence": "high",
+    "rationale": "Note is about buying Samsung S10 from Andy Dalton on Gumtree; journal says \"Tim's phone... I appear to have been scammed\" and \"Andy the dude who sold me the pho\""
   },
   {
     "id": "WB/UniFi switch failure logs.md::2e1b49d1-1164-4c85-a0ca-63adc68aa6b5::Email advising of issue",
@@ -6637,9 +6637,9 @@
     "url": "https://www.evernote.com/shard/s7/nl/784504/2e1b49d1-1164-4c85-a0ca-63adc68aa6b5",
     "guid": "2e1b49d1-1164-4c85-a0ca-63adc68aa6b5",
     "context": "--- --- [Email advising of issue](https://www.evernote.com/shard/s7/nl/784504/2e1b49d1-1164-4c85-a",
-    "action": null,
-    "target": null,
-    "confidence": null,
-    "rationale": null
+    "action": "wikilink",
+    "target": "Hardware failure after ATEK Security works",
+    "confidence": "high",
+    "rationale": "Email participants (derek, joel, tim, kevin, rohan) exactly match journal entry \"Emailed Joel, Tim, Kev, and Rohan re failed UniFi switch\""
   }
 ]

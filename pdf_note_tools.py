@@ -89,6 +89,57 @@ def extract_text(pdf_path: str, max_pages: int = 12) -> tuple[str, int]:
     return "\n".join(parts).strip(), n
 
 
+def find_tesseract(config: dict | None = None) -> str | None:
+    """Locate the Tesseract binary. Prefers config['tesseract_cmd'], then PATH,
+    then the standard Windows install dirs. Returns the path or None if absent."""
+    import shutil
+
+    if config and config.get("tesseract_cmd"):
+        cand = Path(config["tesseract_cmd"])
+        if cand.is_file():
+            return str(cand)
+    found = shutil.which("tesseract")
+    if found:
+        return found
+    for p in (r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+              r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"):
+        if Path(p).is_file():
+            return p
+    return None
+
+
+def ocr_pdf(pdf_path: str, max_pages: int = 12, dpi: int = 300,
+            tesseract_cmd: str | None = None) -> tuple[str, int]:
+    """OCR an image-only PDF and return (text, page_count).
+
+    For scans where extract_text() returns empty (no text layer). Pages are
+    rasterised with pypdfium2 — a pure-Python renderer, so no poppler needed —
+    then read by Tesseract. Pass tesseract_cmd (from find_tesseract) when the
+    binary isn't on PATH. Raises RuntimeError if Tesseract isn't available."""
+    import pypdfium2 as pdfium
+    import pytesseract
+
+    if tesseract_cmd:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+
+    scale = dpi / 72.0
+    pdf = pdfium.PdfDocument(str(pdf_path))
+    try:
+        n = len(pdf)
+        parts = []
+        for i in range(min(n, max_pages)):
+            page = pdf[i]
+            bitmap = page.render(scale=scale)
+            try:
+                parts.append(pytesseract.image_to_string(bitmap.to_pil()) or "")
+            finally:
+                bitmap.close()
+                page.close()
+    finally:
+        pdf.close()
+    return "\n".join(parts).strip(), n
+
+
 def _sanitise(title: str) -> str:
     name = _ILLEGAL.sub("", title)
     name = re.sub(r"\s+", " ", name).strip().rstrip(". ")

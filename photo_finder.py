@@ -14,9 +14,11 @@ HEIC originals are converted to JPG for embedding (Obsidian-friendly).
 Originals are not modified.
 """
 
+import errno
 import logging
 import re
 import shutil
+import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -303,6 +305,48 @@ def find_photo_of_day(
     return shared_match
 
 
+# iCloud for Windows keeps a freshly-synced drop file as an "online-only"
+# placeholder (a ReparsePoint): it reports its real size but holds no local
+# bytes, so the first read returns OSError(EINVAL / [Errno 22]) until iCloud
+# hydrates it. Accessing the data is what triggers that download, so we poke the
+# file and retry with backoff to give the bytes time to land before we copy.
+_HYDRATE_RETRIES = 6
+_HYDRATE_BACKOFF = 2.0  # seconds, grows linearly per attempt (2,4,…,12 ≈ 42s)
+
+
+def _ensure_hydrated(src: Path) -> bool:
+    """Force a cloud placeholder to download before we read/convert/copy it.
+
+    Returns True once the file's bytes are readable, False if it never
+    hydrated. A no-op for normal local files — the first read succeeds at once.
+    """
+    last_err: OSError | None = None
+    for attempt in range(_HYDRATE_RETRIES):
+        try:
+            with open(src, "rb") as f:
+                f.read(1)  # touching the data triggers iCloud's on-demand pull
+            return True
+        except OSError as e:
+            last_err = e
+            if e.errno != errno.EINVAL:
+                break  # not the placeholder symptom — a real error, fail fast
+            time.sleep(_HYDRATE_BACKOFF * (attempt + 1))
+    log.warning(f"Could not hydrate cloud file {src.name}: {last_err}")
+    return False
+
+
+def _is_complete(dest: Path) -> bool:
+    """True only if dest exists with real bytes. A 0-byte file is the remnant
+    of a failed copy (copyfile creates the dest before reading the source, so a
+    read error leaves an empty file behind) — it must be overwritten, never
+    reused, or the note ends up with a broken embed link.
+    """
+    try:
+        return dest.is_file() and dest.stat().st_size > 0
+    except OSError:
+        return False
+
+
 def prepare_for_embed(
     src: Path,
     vault_root: Path,
@@ -326,9 +370,11 @@ def prepare_for_embed(
             return None
         dest_name = f"Pasted image {stamp}.jpg"
         dest = dest_dir / dest_name
-        if dest.exists():
+        if _is_complete(dest):
             log.debug(f"Embed target already exists, reusing: {dest_name}")
             return dest_name
+        if not _ensure_hydrated(src):
+            return None
         try:
             with Image.open(src) as img:
                 rgb = img.convert("RGB")
@@ -336,6 +382,7 @@ def prepare_for_embed(
             log.info(f"Converted HEIC -> JPG: {dest_name}")
             return dest_name
         except Exception as e:
+            dest.unlink(missing_ok=True)  # don't leave a partial file to poison reruns
             log.error(f"Failed to convert {src.name}: {e}")
             return None
 
@@ -343,13 +390,20 @@ def prepare_for_embed(
     ext = src_ext if src_ext != ".jpeg" else ".jpg"
     dest_name = f"Pasted image {stamp}{ext}"
     dest = dest_dir / dest_name
-    if dest.exists():
+    if _is_complete(dest):
         log.debug(f"Embed target already exists, reusing: {dest_name}")
         return dest_name
+    if not _ensure_hydrated(src):
+        return None
     try:
         shutil.copy2(src, dest)
+        if dest.stat().st_size != src.stat().st_size:
+            raise OSError(
+                f"size mismatch after copy ({dest.stat().st_size} != {src.stat().st_size})"
+            )
         log.info(f"Copied photo: {dest_name}")
         return dest_name
     except Exception as e:
+        dest.unlink(missing_ok=True)  # don't leave a partial file to poison reruns
         log.error(f"Failed to copy {src.name}: {e}")
         return None

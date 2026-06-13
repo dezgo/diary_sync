@@ -48,6 +48,8 @@ _URL = (
 _MD_LINK = re.compile(r"\[([^\]]*)\]\((" + _URL + r")\)")
 _HTML_LINK = re.compile(r"<a[^>]*href=\"(" + _URL + r")\"[^>]*>(.*?)</a>",
                         re.S)
+# Angle-bracket autolinks: <https://www.evernote.com/...> — no anchor text.
+_ANGLE_LINK = re.compile(r"<(" + _URL + r")>")
 _GUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}"
                    r"-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
@@ -71,11 +73,15 @@ def _link_id(rel_path: str, anchor: str, url: str) -> str:
 
 def iter_links(text: str):
     """Yield (anchor, url, span) for every internal Evernote note-link in text,
-    covering both markdown `[a](u)` and raw HTML `<a href=u>a</a>` forms."""
+    covering markdown `[a](u)`, HTML `<a href=u>a</a>`, and bare `<url>` forms.
+    Angle-bracket autolinks yield an empty anchor; to_wikilink collapses these
+    to `[[Target]]` without an alias."""
     for m in _MD_LINK.finditer(text):
         yield m.group(1), m.group(2), m.span()
     for m in _HTML_LINK.finditer(text):
         yield re.sub(r"<[^>]+>", "", m.group(2)).strip(), m.group(1), m.span()
+    for m in _ANGLE_LINK.finditer(text):
+        yield "", m.group(1), m.span()
 
 
 def scan_vault(config: dict) -> list[dict]:

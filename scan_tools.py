@@ -265,3 +265,58 @@ def apply_enrichment(config: dict, pdf_path: str, description: str,
     log.info(f"Enriched scan: {pdf.name} -> {new_pdf.name} ({len(tags)} tags, "
              f"{result['refs_updated']} ref file(s) updated)")
     return result
+
+
+def file_away(config: dict, pdf_path: str, dry_run: bool = False) -> dict:
+    """Move an enriched scan out of the Scans/ inbox into its year archive.
+
+    Keeps Scans/ root as an inbox of only un-enriched scans. The companion .md
+    moves to Scans/<year>/ and the PDF to Scans/<year>/attachments/ (so each
+    year folder shows a clean list of note titles, PDFs tucked away). The year
+    comes from the companion's frontmatter date; undated docs (manuals, cards)
+    go to Scans/Reference/ instead.
+
+    The ![[...]] embed is NOT rewritten — Obsidian resolves it by basename
+    anywhere in the vault, so the note still shows the PDF inline. The pipeline
+    never sees filed scans again (discovery is non-recursive over the inbox).
+
+    Call this on an inbox pair (PDF + sibling companion). Raises on a
+    destination collision rather than overwriting. dry_run returns the planned
+    moves without touching anything.
+    """
+    pdf = Path(pdf_path)
+    comp = pdf.with_suffix(".md")
+    if not pdf.is_file():
+        raise FileNotFoundError(f"PDF not found: {pdf}")
+    if not comp.is_file():
+        raise FileNotFoundError(f"Companion not found (must be a sibling): {comp}")
+
+    # Bucket by the ISO date PREFIX in the name, not the frontmatter date:
+    # undated docs (manuals, cards) are deliberately named without a prefix even
+    # though their companion may carry a scan-date, and those belong in Reference.
+    m = re.match(r"(\d{4})-\d{2}-\d{2} ", pdf.stem)
+    bucket = m.group(1) if m else "Reference"
+    scans = _scans_dir(config)
+    note_dir = scans / bucket
+    pdf_dir = note_dir / "attachments"
+    new_comp = note_dir / comp.name
+    new_pdf = pdf_dir / pdf.name
+
+    result = {
+        "bucket": bucket,
+        "old_pdf": str(pdf), "new_pdf": str(new_pdf),
+        "old_companion": str(comp), "new_companion": str(new_comp),
+        "collision": (new_comp.exists() and new_comp != comp)
+                     or (new_pdf.exists() and new_pdf != pdf),
+        "moved": False,
+    }
+    if dry_run or result["collision"]:
+        return result
+
+    note_dir.mkdir(parents=True, exist_ok=True)
+    pdf_dir.mkdir(parents=True, exist_ok=True)
+    comp.rename(new_comp)
+    pdf.rename(new_pdf)
+    result["moved"] = True
+    log.info(f"Filed scan into {bucket}/: {pdf.name}")
+    return result

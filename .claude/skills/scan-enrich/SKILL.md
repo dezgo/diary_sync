@@ -102,8 +102,52 @@ res = st.apply_enrichment(cfg, pdf_path, description, tag_list)
 # vault note that linked to the old name. res['refs_updated'] = files changed.
 ```
 
+If the document's own date differs from the scan date the companion was born
+with (e.g. a receipt dated the day before it was scanned), pass it via the
+`date=` arg — **do not** apply once and then re-run to "fix" it:
+
+```python
+st.apply_enrichment(cfg, pdf_path, description, tag_list, date="2026-06-27")
+# date="YYYY-MM-DD" sets both the filename prefix and the frontmatter date.
+# date=False = no date prefix at all (undated docs like manuals → Reference).
+```
+
 Report what changed. After renaming, `sync.py` won't re-create a companion
 (the stem still matches), and the date is preserved in frontmatter.
+
+### 6. File it away (keep the inbox empty)
+
+`Scans/` root is an **inbox** — only freshly-dropped, un-enriched scans live
+there. Once a scan is enriched, file the pair out of the root so the inbox shows
+only what's still pending:
+
+```python
+st.file_away(cfg, res["new_pdf_path"] if "new_pdf_path" in res else new_pdf_path)
+# Moves the companion .md to Scans/<year>/ and the PDF to
+# Scans/<year>/attachments/ (year from the ISO prefix in the name; undated docs
+# → Scans/Reference/). The ![[embed]] is NOT rewritten — Obsidian resolves it by
+# basename, so the note still shows the PDF inline. Pass dry_run=True to preview.
+```
+
+Layout this produces (each year folder shows clean note titles, PDFs tucked away):
+
+```
+Scans/
+   <new scan>.pdf + .md          <- inbox: only un-enriched
+   2026/
+      2026-06-26 Tesla Certificate ....md
+      attachments/
+         2026-06-26 Tesla Certificate ....pdf
+   Reference/                     <- undated docs (manuals, cards)
+      Anko ... manual.md
+      attachments/
+         Anko ... manual.pdf
+```
+
+After filing, **verify the embed resolves** — read the moved `.md` and confirm
+its `![[…pdf]]` matches a real PDF (basename, unique vault-wide). Discovery is
+non-recursive, so filed scans are invisible to `list_pending` / `sync.py` and
+are never re-touched.
 
 ## Guardrails
 

@@ -46,14 +46,23 @@ All helpers are in `scan_tools.py` at the repo root. Run them with
 
 ### 1. Find what needs enriching
 
+First create companions for any freshly-dropped bare PDFs, then list what's
+pending. `ensure_scan_companions` is the same idempotent pass `sync.py` runs — it
+mints a blank companion (`tags: []`, datestamp filename) for every scan that
+doesn't have one yet, so a scan dropped in since the last sync becomes visible to
+`list_pending` without running the whole diary sync.
+
 ```python
 import scan_tools as st
+import scan_companion as sc
 cfg = st.load_config()
+sc.ensure_scan_companions(cfg)   # create companions for any new bare PDFs
 pending = st.list_pending(cfg)   # scans whose companion still has tags: []
 ```
 
-Each entry has `pdf`, `companion`, `date`, `pages`. If empty, tell Derek there's
-nothing to do (run `sync.py` first if scans exist but have no companion yet).
+Each entry has `pdf`, `companion`, `date`, `pages`. If empty after the companion
+pass, tell Derek there's genuinely nothing to enrich (every scan in the inbox
+already has tags, or the inbox is empty).
 
 ### 2. Load the tag vocabulary once
 
